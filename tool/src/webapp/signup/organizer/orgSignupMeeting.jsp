@@ -54,12 +54,16 @@
 							<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}">
 								<f:convertDateTime timeStyle="short" />
 							</h:outputText>
+							<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+								<f:convertDateTime pattern=", EEEEEEEE" />
+							</h:outputText>
 							<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 							<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.endTime}">
 								<f:convertDateTime timeStyle="short" />
 							</h:outputText>
+							<h:outputText value=",&nbsp;" escape="false" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}"/>
 							<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-									<f:convertDateTime  pattern=", EEEEEEEE" />
+									<f:convertDateTime dateStyle="full"/>
 							</h:outputText>
 						</h:panelGroup>		
 						
@@ -119,24 +123,30 @@
 									   			<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}">
 													<f:convertDateTime timeStyle="short" />
 												</h:outputText>
+												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime pattern=", EEE" />
+												</h:outputText>
 												<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}">
 													<f:convertDateTime timeStyle="short" />
 												</h:outputText>
-												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEEEEEEE" />
+												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime pattern=", EEE" />
 												</h:outputText>
 											</h:outputLink>
 											<h:panelGroup rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}">
 													<f:convertDateTime timeStyle="short" />
 												</h:outputText>
+												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime pattern=", EEE" />
+												</h:outputText>
 												<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}">
 													<f:convertDateTime timeStyle="short" />
 												</h:outputText>
-												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEEEEEEE" />
+												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime pattern=", EEE" />
 												</h:outputText>
 											</h:panelGroup>
 										</h:panelGroup>
@@ -194,10 +204,10 @@
 						   						<h:panelGroup rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" id="editLink">
 						   							<h:graphicImage id="editAttendee" value="/images/edit.png" title="#{msgs.event_tool_tips_edit}"
 						   								onclick="showHideEditPanel('#{timeSlotWrapper.positionInTSlist}','#{attendeeWrapper.positionIndex}','#{attendeeWrapper.signupAttendee.attendeeUserId}');" 
-						   								alt="edit" style="border:none" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}"/>
+						   								alt="edit" style="cursor:pointer; border:none" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}"/>
 						   							<h:outputText value="&nbsp;" escape="false"/>
 						   							<h:commandLink id="deleteAttendee" action="#{OrganizerSignupMBean.removeAttendee}"  onmousedown="assignDeleteClick(this,'#{msgs.delete_attandee_confirmation}');"  title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}" >
-						   								<h:graphicImage value="/images/delete.gif"  alt="delete" style="border:none" ></h:graphicImage>
+						   								<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" ></h:graphicImage>
 						   								<f:param id="deletAttendeeUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"></f:param>
 						   							</h:commandLink>
 						   							<h:outputText value="&nbsp;" escape="false" />
@@ -261,9 +271,11 @@
 						   				
 					   					<h:panelGroup id="addAttendee" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 					   						<%-- TODO add spacer only if the attendees exist in atleast one timeslot --%>
-					   						<h:graphicImage value="/images/spacer.gif" width="20" height="16" alt="spacer" style="border:none"/>
-						   					<h:graphicImage value="/images/add.png"  alt="add an attendee"  style="border:none" onclick="showHideAddPanel('#{timeSlotWrapper.positionInTSlist}');"/>
-						   					<h:outputText value="#{msgs.event_add_attendee}" escape="false" styleClass="addAttendee"/>	
+					   						<h:graphicImage value="/images/spacer.gif" width="18" height="16" alt="spacer" style="border:none"/>
+						   					<h:outputLabel onclick="showHideAddPanel('#{timeSlotWrapper.positionInTSlist}');" styleClass="addAttendee">
+						   						<h:graphicImage value="/images/add.png"  alt="add an attendee"  style="border:none" />
+						   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" />
+						   					</h:outputLabel>	
 						   				</h:panelGroup>
 							   				
 						   				<h:panelGroup id="addPanel" style="display: none;" >
@@ -301,7 +313,7 @@
 									   				<h:column>
 									   					<h:panelGroup rendered="#{waiterWrapper.signupAttendee.attendeeUserId !=null}">
 									   						<h:commandLink id="removeWaitingList" action="#{OrganizerSignupMBean.removeAttendeeFromWList}" title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
-									   							<h:graphicImage value="/images/delete.gif"  alt="delete" style="border:none" />
+									   							<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" />
 									   							<f:param id="waiterUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{waiterWrapper.signupAttendee.attendeeUserId}"/>
 									   						</h:commandLink>
 									   						<h:outputText value="&nbsp;" escape="false" />
@@ -311,9 +323,14 @@
 									   			</h:dataTable>
 									   			
 									   			<h:panelGroup id="addWaiter" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
-								   					<h:graphicImage value="/images/add.png"  alt="add an waiter"  style="border:none" rendered="#{!timeSlotWrapper.timeSlot.available}" onclick="showHideAddWaiterPanel('#{timeSlotWrapper.positionInTSlist}');" />
-								   					<h:graphicImage value="/images/addDisabled.png"  alt="add an waiter" title="#{msgs.event_tool_tips_action_disabled_label}" style="border:none" rendered="#{timeSlotWrapper.timeSlot.available}"/>
-								   					<h:outputText value="#{msgs.event_add_attendee}" escape="false" styleClass="addAttendee"/>	
+									   				<h:outputLabel rendered="#{!timeSlotWrapper.timeSlot.available}" onclick="showHideAddWaiterPanel('#{timeSlotWrapper.positionInTSlist}');" styleClass="addWaiter">
+								   						<h:graphicImage value="/images/add.png"  alt="add an waiter"  style="border:none"  />
+								   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" />	
+								   					</h:outputLabel>
+								   					<h:panelGroup rendered="#{timeSlotWrapper.timeSlot.available}" style="margin-left: 1px;">
+								   						<h:graphicImage value="/images/addDisabled.png"  alt="add an waiter" title="#{msgs.event_tool_tips_action_disabled_label}" style="border:none" />
+								   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" styleClass="disabledAddAttendee"/>
+								   					</h:panelGroup>
 								   				</h:panelGroup>
 								   				
 								   				<h:panelGroup id="addWaiterPanel" style="display: none;">
@@ -366,7 +383,7 @@
 								<h:outputText value="&nbsp;" escape="false"/>
 								<h:panelGroup >							 
 									<h:outputText value="#{msgs.organizer_instruction_click}" escape="false"/>
-									<h:graphicImage value="/images/delete.gif"/>
+									<h:graphicImage value="/images/delete.png"/>
 									<h:outputText value="#{msgs.organizer_instruction_delete_image}" escape="false"/>
 								</h:panelGroup>
 								
