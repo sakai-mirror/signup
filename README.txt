@@ -16,17 +16,15 @@ Section A: Installation
 	Sakai 2.4	
 		http://source.sakaiproject.org/release/2.4.0/
 
-	Sakai 2.5	
-		http://confluence.sakaiproject.org/confluence/display/DOC/Install+Guide+(2.5)
 
  Compatibility:
 	
-   The Sign-up tool is currently compatible with Sakai versions from 2.3 to 2.5.  Appropriate build 
+   The Sign-up tool is currently compatible with Sakai versions from 2.3 to 2.4.  Appropriate build 
    files are provided for both Maven 1 and Maven 2.
  
  Requirements to run Sign-up tool:
 
-	Sakai 2.3 or higher.
+	Sakai 2.3 or 2.4.
 	Java JDK 1.5 version or higher.
 	Tomcat 5.5.20 version or higher.
 
