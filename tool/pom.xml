@@ -64,6 +64,34 @@
 			<version>${sakai.spring.version}</version>
 			<type>jar</type>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.sakaiproject</groupId>
+			<artifactId>sakai-site-api</artifactId>
+			<version>${sakai.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.sakaiproject</groupId>
+			<artifactId>sakai-entity-api</artifactId>
+			<version>${sakai.version}</version>
+		</dependency>
+		<dependency>
+	      <groupId>org.sakaiproject</groupId>
+	      <artifactId>sakai-entity-util</artifactId>
+	      <version>${sakai.version}</version>
+	    </dependency>
+	   	<dependency>
+			<groupId>org.sakaiproject</groupId>
+		    <artifactId>sakai-tool-api</artifactId>
+		     <version>${sakai.version}</version>
+	    </dependency>
+	     <dependency>
+		      <groupId>org.sakaiproject</groupId>
+		      <artifactId>sakai-event-api</artifactId>
+		      <version>${sakai.version}</version>
+	    </dependency>	
+	    
 		<!-- we are running a webapp in tomcat so we need the servlet api -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -77,12 +105,11 @@
 			<artifactId>sakai-util</artifactId>
 			<version>${sakai.version}</version>
 			<scope>runtime</scope>
-		</dependency>
+		</dependency>		
 		<dependency>
 			<groupId>org.sakaiproject</groupId>
 			<artifactId>sakai-util-api</artifactId>
-			<version>${sakai.version}</version>
-			
+			<version>${sakai.version}</version>			
 		</dependency>
 
 		<dependency>
