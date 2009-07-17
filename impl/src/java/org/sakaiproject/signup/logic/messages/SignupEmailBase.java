@@ -25,11 +25,11 @@ package org.sakaiproject.signup.logic.messages;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.ResourceBundle;
 
 import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.MeetingTypes;
 import org.sakaiproject.time.api.Time;
+import org.sakaiproject.util.ResourceLoader;
 
 /**
  * <p>
@@ -41,7 +41,7 @@ abstract public class SignupEmailBase implements SignupEmailNotification, Meetin
 
 	private SakaiFacade sakaiFacade;
 
-	protected static ResourceBundle rb = ResourceBundle.getBundle("emailMessage");
+	protected static ResourceLoader rb = new ResourceLoader("emailMessage");
 
 	public static final String newline = "<BR>\r\n"; // System.getProperty("line.separator");\r\n
 
@@ -180,13 +180,13 @@ abstract public class SignupEmailBase implements SignupEmailNotification, Meetin
 		if (myServiceName == null) {
 			try {
 				myServiceName = rb.getString("ui.service");
-				if (myServiceName.trim().length() < 1)
+				int index = myServiceName.indexOf("missing key");
+				if (index >=0)
 					myServiceName = getSakaiFacade().getServerConfigurationService().getString("ui.service",
 							"Sakai Service");
 			} catch (Exception e) {
 				myServiceName = getSakaiFacade().getServerConfigurationService().getString("ui.service",
 						"Sakai Service");
-				;
 			}
 		}
 
