@@ -1,7 +1,7 @@
 /**********************************************************************************
  * $URL$
  * $Id$
-***********************************************************************************
+ ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University
  * 
@@ -33,10 +33,14 @@ import javax.faces.model.SelectItem;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.LogFactoryImpl;
+import org.sakaiproject.component.cover.ServerConfigurationService;
 import org.sakaiproject.event.api.UsageSession;
 import org.sakaiproject.event.cover.EventTrackingService;
 import org.sakaiproject.event.cover.UsageSessionService;
+import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.MeetingTypes;
+import org.sakaiproject.signup.model.SignupAttendee;
+import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
 import org.sakaiproject.signup.tool.jsf.ErrorMessageUIBean;
 import org.sakaiproject.signup.tool.jsf.SignupMeetingsBean;
@@ -53,6 +57,11 @@ public final class Utilities implements SignupBeanConstants, MeetingTypes {
 	 * Get the resource bundle for messages.properties file
 	 */
 	public static ResourceLoader rb = new ResourceLoader("messages");
+	
+	/**
+	 * Get the resource bundle for signupConfig.properties file
+	 */
+	public static ResourceLoader rbConf = new ResourceLoader("signupConfig");
 
 	/**
 	 * Defined a constant name for errorMessageUIBean
@@ -271,8 +280,7 @@ public final class Utilities implements SignupBeanConstants, MeetingTypes {
 		return meetingTypeItems;
 	}
 
-	private static boolean postToDatabase = "false".equals(rb
-			.getString("post.eventTracking.info.to.DB")) ? false : true;
+	private static boolean postToDatabase = "false".equals(getSignupConfigParamVal("signup.post.eventTracking.info.to.DB", "true")) ? false : true;
 
 	/**
 	 * This method will post user action event to DB by using
@@ -299,4 +307,107 @@ public final class Utilities implements SignupBeanConstants, MeetingTypes {
 
 	}
 
+	/**
+	 * It will obtain user current sign-up status in an event.
+	 * 
+	 * @param meeting
+	 *            a SignupMeeting object
+	 * @param currentUserId
+	 *            a unique user internal id.
+	 * @param sakaiFacade
+	 *            a SakaiFacade object
+	 * @return a String object
+	 */
+	public static String retrieveAvailStatus(SignupMeeting meeting,
+			String currentUserId, SakaiFacade sakaiFacade) {
+		long curTime = (new Date()).getTime();
+		long meetingStartTime = meeting.getStartTime().getTime();
+		long meetingEndTime = meeting.getEndTime().getTime();
+		long meetingSignupBegin = meeting.getSignupBegins().getTime();
+		if (meetingEndTime < curTime)
+			return rb.getString("event.closed");
+		if (meetingEndTime > curTime && meetingStartTime < curTime)
+			return rb.getString("event.inProgress");
+
+		if (meeting.getMeetingType().equals(SignupMeeting.ANNOUNCEMENT)) {
+			return rb.getString("event.SignupNotRequire");
+		}
+
+		String availableStatus = rb.getString("event.unavailable");
+		boolean isSignupBegin = true;
+		if (meetingSignupBegin > curTime) {
+			isSignupBegin = false;
+			availableStatus = rb.getString("event.Signup.not.started.yet")
+					+ " "
+					+ sakaiFacade.getTimeService().newTime(
+							meeting.getSignupBegins().getTime())
+							.toStringLocalShortDate();
+		}
+
+		boolean isOnWaitingList = false;
+		List<SignupTimeslot> signupTimeSlots = meeting.getSignupTimeSlots();
+		for (SignupTimeslot timeslot : signupTimeSlots) {
+			List<SignupAttendee> attendees = timeslot.getAttendees();
+			for (SignupAttendee attendee : attendees) {
+				if (attendee.getAttendeeUserId().equals(currentUserId))
+					return rb.getString("event.youSignedUp");
+			}
+
+			List<SignupAttendee> waiters = timeslot.getWaitingList();
+			if (!isOnWaitingList) {
+				for (SignupAttendee waiter : waiters) {
+					if (waiter.getAttendeeUserId().equals(currentUserId)) {
+						availableStatus = rb.getString("event.youOnWaitList");
+						isOnWaitingList = true;
+						break;
+					}
+				}
+			}
+
+			int size = (attendees == null) ? 0 : attendees.size();
+			if (!isOnWaitingList
+					&& isSignupBegin
+					&& (size < timeslot.getMaxNoOfAttendees() || timeslot
+							.getMaxNoOfAttendees() == SignupTimeslot.UNLIMITED)) {
+				availableStatus = rb.getString("event.available");
+			}
+		}
+
+		return availableStatus;
+	}
+
+	/**
+	 * This method will convert int days to a Date object
+	 * 
+	 * @param days
+	 *            it indicates how many days from current time into the future
+	 * @return a Date object
+	 */
+	public static Date getUserDefinedDate(int days) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		cal.add(Calendar.HOUR, 24 * days);
+		return cal.getTime();
+	}
+	
+	public static String getSignupConfigParamVal(String paramName, String defaultValue) {
+		/* first look at sakai.properties and the tool bundle*/
+		String myConfigValue=defaultValue;
+		if (paramName != null) {
+			try {
+				myConfigValue = ServerConfigurationService.getString(paramName);
+				if(myConfigValue ==null || myConfigValue.trim().length() < 1){
+					myConfigValue = rbConf.getString(paramName);
+					int index = myConfigValue.indexOf("missing key");/*return value by rb if no key defined-- hard coded!!!*/
+					if (index >=0)
+						myConfigValue = defaultValue;
+				}
+			} catch (Exception e) {
+				myConfigValue = defaultValue;
+			}
+		}
+
+		return myConfigValue;
+
+	}
 }

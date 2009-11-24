@@ -114,6 +114,18 @@
 			<artifactId>sakai-calendar-api</artifactId>
 			<version>${sakai.version}</version>
 		</dependency>
+		
+		<dependency>
+      		<groupId>org.sakaiproject</groupId>
+      		<artifactId>sakai-content-api</artifactId>
+      		<version>${sakai.version}</version>
+    	</dependency>
+		
+		<dependency>
+            <groupId>quartz</groupId>
+            <artifactId>quartz</artifactId>
+            <version>1.5.2</version>
+        </dependency>
 
 		<!-- Apache commons dependencies -->
 		<dependency>

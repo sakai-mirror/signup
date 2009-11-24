@@ -26,8 +26,12 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
 
+import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.MeetingTypes;
+import org.sakaiproject.signup.model.SignupMeeting;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.util.ResourceLoader;
 
@@ -40,22 +44,24 @@ import org.sakaiproject.util.ResourceLoader;
 abstract public class SignupEmailBase implements SignupEmailNotification, MeetingTypes {
 
 	private SakaiFacade sakaiFacade;
+	
+	protected SignupMeeting meeting;
 
 	protected static ResourceLoader rb = new ResourceLoader("emailMessage");
 
 	public static final String newline = "<BR>\r\n"; // System.getProperty("line.separator");\r\n
 
 	public static final String space = " ";
+	
+	private static final int SITE_DESCRIPTION_DISPLAY_LENGTH=20;
 
 	/* footer for the email */
 	protected String getFooter(String newline) {
 		/* tag the message - HTML version */
-		Object[] params = new Object[] { getServiceName(),
-				"<a href=\"" + getSiteAccessUrl() + "\">" + getSiteAccessUrl() + "</a>", getSiteTitle(), newline };
-		String rv = newline + rb.getString("separator") + newline
-				+ MessageFormat.format(rb.getString("body.footer.text"), params) + newline;
-
-		return rv;
+		if(this.meeting.getCurrentSiteId()==null)
+			return getFooterWithAccessUrl(newline);
+		else
+			return getFooterWithNoAccessUrl(newline);
 	}
 
 	/* footer for the email */
@@ -66,6 +72,28 @@ abstract public class SignupEmailBase implements SignupEmailNotification, Meetin
 				getSiteTitle(targetSiteId), newline };
 		String rv = newline + rb.getString("separator") + newline
 				+ MessageFormat.format(rb.getString("body.footer.text"), params) + newline;
+
+		return rv;
+	}
+	
+	/* footer for the email */
+	private String getFooterWithAccessUrl(String newline) {
+		/* tag the message - HTML version */
+		Object[] params = new Object[] { getServiceName(),
+				"<a href=\"" + getSiteAccessUrl() + "\">" + getSiteAccessUrl() + "</a>", getSiteTitle(), newline };
+		String rv = newline + rb.getString("separator") + newline
+				+ MessageFormat.format(rb.getString("body.footer.text"), params) + newline;
+
+		return rv;
+	}
+	
+	/* footer for the email */
+	private String getFooterWithNoAccessUrl(String newline) {
+		/* tag the message - HTML version */
+		Object[] params = new Object[] { getServiceName(),
+				getSiteTitle(), newline };
+		String rv = newline + rb.getString("separator") + newline
+				+ MessageFormat.format(rb.getString("body.footer.text.no.access.link"), params) + newline;
 
 		return rv;
 	}
@@ -106,17 +134,24 @@ abstract public class SignupEmailBase implements SignupEmailNotification, Meetin
 	 * @return the current site Id
 	 */
 	protected String getSiteId() {
-		return getSakaiFacade().getCurrentLocationId();
+		String siteId = getSakaiFacade().getCurrentLocationId();
+		if(SakaiFacade.NO_LOCATION.equals(siteId)){
+			siteId =meeting.getCurrentSiteId()!=null? this.meeting.getCurrentSiteId() : SakaiFacade.NO_LOCATION;			
+		}
+		
+		return siteId;
 	}
 
 	/* get the site name */
 	protected String getSiteTitle() {
-		return getSakaiFacade().getLocationTitle(getSiteId());
+		String title = getSakaiFacade().getLocationTitle(getSiteId());
+		title +=getShortDescription(getSiteId());
+		return title;
 	}
 
 	/* get the site name */
 	protected String getSiteTitle(String targetSiteId) {
-		return getSakaiFacade().getLocationTitle(targetSiteId);
+		return getSakaiFacade().getLocationTitle(targetSiteId) + getShortDescription(targetSiteId);
 	}
 
 	/* get the site name with a quotation mark */
@@ -176,22 +211,57 @@ abstract public class SignupEmailBase implements SignupEmailNotification, Meetin
 	static private String myServiceName = null;
 
 	protected String getServiceName() {
-		/* first look at email bundle since it's not a Sakai core tool yet */
+		/* first look at email bundle and then sakai.properties. 
+		 * it will allow user to define different 'ui.service' value */
 		if (myServiceName == null) {
 			try {
 				myServiceName = rb.getString("ui.service");
-				int index = myServiceName.indexOf("missing key");
+				int index = myServiceName.indexOf("missing key");/*return value by rb if no key defined-- hard coded!!!*/
 				if (index >=0)
 					myServiceName = getSakaiFacade().getServerConfigurationService().getString("ui.service",
 							"Sakai Service");
 			} catch (Exception e) {
 				myServiceName = getSakaiFacade().getServerConfigurationService().getString("ui.service",
 						"Sakai Service");
-				;
 			}
 		}
 
 		return myServiceName;
 
 	}
+	
+	private String getShortDescription(String siteId)
+    {
+		Site site;
+		try {
+			site = SiteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			return "";
+		}
+        String shortDescription = "";
+        if (site.getShortDescription() != null && !"".equals(site.getShortDescription()))
+        {
+            shortDescription = site.getShortDescription();
+            if (shortDescription.length() > SITE_DESCRIPTION_DISPLAY_LENGTH) shortDescription = shortDescription.substring(0, 20);
+            shortDescription = ": " + shortDescription;
+        }
+        return shortDescription;
+    }
+	
+	protected String getRepeatTypeMessage(SignupMeeting meeting){
+		String recurFrqs ="";
+		if (DAILY.equals(meeting.getRepeatType()))
+			recurFrqs = rb.getString("body.meeting.repeatDaily");
+		else if (WEEKDAYS.equals(meeting.getRepeatType()))
+			recurFrqs = rb.getString("body.meeting.repeatWeekdays");
+		else if (WEEKLY.equals(meeting.getRepeatType()))
+			recurFrqs = rb.getString("body.meeting.repeatWeekly");
+		else if (BIWEEKLY.equals(meeting.getRepeatType()))
+			recurFrqs = rb.getString("body.meeting.repeatBiWeekly");
+		else
+			recurFrqs = rb.getString("body.meeting.unknown.repeatType");
+		
+		return recurFrqs;
+	}
+	
 }

@@ -41,8 +41,6 @@ public class OrganizerPreAssignEmail extends SignupEmailBase {
 
 	private final User organizer;
 
-	private final SignupMeeting meeting;
-
 	private final SignupTimeslot timeslot;
 
 	private final User user;
@@ -128,13 +126,7 @@ public class OrganizerPreAssignEmail extends SignupEmailBase {
 		/* for recurring meeting */
 		if (meeting.isRecurredMeeting()) {
 			message.append(newline + rb.getString("body.meeting.recurrence") + space);
-			String recurFrqs = "";
-			if (DAILY.equals(meeting.getRepeatType()))
-				recurFrqs = rb.getString("body.meeting.repeatDaily");
-			else if (WEEKLY.equals(meeting.getRepeatType()))
-				recurFrqs = rb.getString("body.meeting.repeatWeekly");
-			else if (BIWEEKLY.equals(meeting.getRepeatType()))
-				recurFrqs = rb.getString("body.meeting.repeatBiWeekly");
+			String recurFrqs = getRepeatTypeMessage(meeting);
 
 			Object[] paramsRecur = new Object[] { recurFrqs, getTime(meeting.getRepeatUntil()).toStringLocalDate() };
 			message.append(MessageFormat.format(rb.getString("body.recurrence.meeting.status"), paramsRecur));

@@ -14,6 +14,8 @@
 	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/generic-dao/0.9.8/generic-dao-0.9.8.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring/2.0.6/spring-2.0.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/hibernate/hibernate/3.2.5.ga/hibernate-3.2.5.ga.jar"/>
+	<classpathentry kind="var" path="M2_REPO/quartz/quartz/1.5.2/quartz-1.5.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/poi/poi/3.5-beta4/poi-3.5-beta4.jar"/>
 	<classpathentry kind="src" path="/authz-api"/>
 	<classpathentry kind="src" path="/site-api"/>
 	<classpathentry kind="src" path="/tool-api"/>
@@ -25,6 +27,7 @@
 	<classpathentry kind="src" path="/entity-util"/>
 	<classpathentry kind="src" path="/event-api"/>
 	<classpathentry kind="src" path="/component-api"/>
+	<classpathentry kind="src" path="/content-api"/>
 	<classpathentry kind="src" path="/calendar-api"/>
 	<classpathentry kind="src" path="/jsf"/>
 	<classpathentry kind="output" path="bin"/>

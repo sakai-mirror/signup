@@ -124,6 +124,12 @@
 			<artifactId>sakai-util-api</artifactId>
 			<version>${sakai.version}</version>			
 		</dependency>
+		
+		<dependency>
+      		<groupId>org.sakaiproject</groupId>
+      		<artifactId>sakai-content-api</artifactId>
+      		<version>${sakai.version}</version>
+    	</dependency>
 
 		<dependency>
 			<groupId>org.sakaiproject</groupId>
@@ -161,6 +167,13 @@
 			<scope>compile</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.5-FINAL</version>
+			<scope>compile</scope>
+		</dependency>
+		
 		<!-- standard tag libraries -->
 		<dependency>
 			<groupId>javax.servlet</groupId>

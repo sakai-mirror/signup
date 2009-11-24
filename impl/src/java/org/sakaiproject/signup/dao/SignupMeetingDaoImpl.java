@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.sakaiproject.genericdao.hibernate.HibernateCompleteGenericDao;
 import org.sakaiproject.signup.model.SignupMeeting;
@@ -181,6 +182,52 @@ public class SignupMeetingDaoImpl extends HibernateCompleteGenericDao implements
 	public void removeMeetings(List<SignupMeeting> meetings) {
 		getHibernateTemplate().deleteAll(meetings);
 
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean isEventExisted(Long eventId) {
+		//TODO need test with lazy loading
+		SignupMeeting ls = loadSignupMeeting(eventId);
+		if (ls ==null)
+			return false;
+		
+		return true;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public int getAutoReminderTotalEventCounts(Date startDate, Date endDate) {
+		DetachedCriteria criteria = DetachedCriteria.forClass(
+				SignupMeeting.class).setResultTransformer(
+				Criteria.DISTINCT_ROOT_ENTITY).add(Restrictions.eq("autoReminder", true))
+				.add(Restrictions.between("startTime", startDate, endDate))
+				.setProjection(Projections.rowCount());
+		
+		List ls = getHibernateTemplate().findByCriteria(criteria);
+		if (ls == null || ls.isEmpty())
+			return 0;
+		
+		Integer rowCount = (Integer) ls.get(0);
+		
+		return rowCount !=null? rowCount.intValue():0;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@SuppressWarnings("unchecked")
+	public List<SignupMeeting> getAutoReminderSignupMeetings(Date startDate,
+			Date endDate) {
+		DetachedCriteria criteria = DetachedCriteria.forClass(
+				SignupMeeting.class).setResultTransformer(
+				Criteria.DISTINCT_ROOT_ENTITY).add(Restrictions.eq("autoReminder", true))
+				.add(Restrictions.between("startTime", startDate, endDate))
+				.addOrder(Order.asc("startTime"));		
+
+		return getHibernateTemplate().findByCriteria(criteria);
 	}
 
 }
