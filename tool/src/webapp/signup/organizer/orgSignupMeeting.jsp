@@ -317,23 +317,27 @@
 									<h:panelGrid columns="1" styleClass="organizerAction">
 						   				<h:dataTable id="availableSpots" value="#{timeSlotWrapper.attendeeWrappers}" var="attendeeWrapper">
 						   					<h:column>
-						   						<h:panelGroup rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" id="editLink">
-						   							<h:graphicImage id="editAttendee" value="/images/edit.png" title="#{msgs.event_tool_tips_edit}" styleClass="openCloseImageIcon"
-						   								onclick="showHideEditPanel('#{timeSlotWrapper.positionInTSlist}','#{attendeeWrapper.positionIndex}','#{attendeeWrapper.signupAttendee.attendeeUserId}');" 
-						   								alt="edit" style="cursor:pointer; border:none" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}"/>
-						   							<h:outputText value="&nbsp;" escape="false"/>
-						   							<h:commandLink id="deleteAttendee" action="#{OrganizerSignupMBean.removeAttendee}"  onmousedown="assignDeleteClick(this,'#{msgs.delete_attandee_confirmation}');"  title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}" >
-						   								<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" styleClass="openCloseImageIcon"></h:graphicImage>
-						   								<f:param id="deletAttendeeUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"></f:param>
-						   							</h:commandLink>
-						   							<h:outputText value="&nbsp;" escape="false" />
-						   							<h:commandLink action="#{OrganizerSignupMBean.viewAttendeeComment}">
-						   								<f:param id="timeslotId" name="timeslotId" value="#{timeSlotWrapper.timeSlot.id}"/>
-						   								<f:param id="attendeeUserId" name="attendeeUserId" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"/>				   										   								
-						   								<h:outputText value="#{attendeeWrapper.displayName}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}"/>
-						   								<h:graphicImage title="Click to view comment" value="/images/comment.gif" width="11" height="11" alt="view comment" style="border:none" styleClass="openCloseImageIcon" rendered="#{attendeeWrapper.comment}" />
-						   							</h:commandLink>
-						   						</h:panelGroup>
+						   						<h:panelGrid columns="2" columnClasses="editAddImages,attName"  rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" id="editLink">
+						   							<h:panelGroup>
+							   							<h:graphicImage id="editAttendee" value="/images/edit.png" title="#{msgs.event_tool_tips_edit}" styleClass="openCloseImageIcon"
+							   								onclick="showHideEditPanel('#{timeSlotWrapper.positionInTSlist}','#{attendeeWrapper.positionIndex}','#{attendeeWrapper.signupAttendee.attendeeUserId}');" 
+							   								alt="edit" style="cursor:pointer; border:none" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}"/>
+							   							<h:outputText value="&nbsp;" escape="false"/>
+							   							<h:commandLink id="deleteAttendee" action="#{OrganizerSignupMBean.removeAttendee}"  onmousedown="assignDeleteClick(this,'#{msgs.delete_attandee_confirmation}');"  title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}" >
+							   								<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" styleClass="openCloseImageIcon"></h:graphicImage>
+							   								<f:param id="deletAttendeeUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"></f:param>
+							   							</h:commandLink>
+							   							<h:outputText value="&nbsp;" escape="false" />
+						   							</h:panelGroup>
+						   							<h:panelGroup>
+							   							<h:commandLink action="#{OrganizerSignupMBean.viewAttendeeComment}">
+							   								<f:param id="timeslotId" name="timeslotId" value="#{timeSlotWrapper.timeSlot.id}"/>
+							   								<f:param id="attendeeUserId" name="attendeeUserId" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"/>				   										   								
+							   								<h:outputText value="#{attendeeWrapper.displayName}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}"/>
+							   								<h:graphicImage title="Click to view comment" value="/images/comment.gif" width="11" height="11" alt="view comment" style="border:none" styleClass="openCloseImageIcon" rendered="#{attendeeWrapper.comment}" />
+							   							</h:commandLink>
+							   						</h:panelGroup>
+						   						</h:panelGrid>
 						   						
 								   				<h:panelGroup id="editPanel" style="display: none;">
 									   					<h:panelGrid columns="1" >
@@ -388,7 +392,7 @@
 						   				
 					   					<h:panelGroup id="addAttendee" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 					   						<%-- TODO add spacer only if the attendees exist in atleast one timeslot --%>
-					   						<h:graphicImage value="/images/spacer.gif" width="18" height="16" alt="spacer" style="border:none"/>
+					   						<h:graphicImage value="/images/spacer.gif" width="20" height="16" alt="spacer" style="border:none"/>
 						   					<h:outputLabel onclick="showHideAddPanel('#{timeSlotWrapper.positionInTSlist}');" styleClass="addAttendee">
 						   						<h:graphicImage value="/images/add.png"  alt="add an attendee" title="#{msgs.event_tool_tips_add}" style="border:none" styleClass="openCloseImageIcon"/>
 						   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" />
@@ -439,23 +443,26 @@
 										<h:panelGrid columns="1" rendered="#{!timeSlotWrapper.timeSlot.unlimitedAttendee}" styleClass="organizerAction">
 									   			<h:dataTable id="waiterSpots" value="#{timeSlotWrapper.waitingList}" binding="#{OrganizerSignupMBean.waiterWrapperTable}" var="waiterWrapper">
 									   				<h:column>
-									   					<h:panelGroup rendered="#{waiterWrapper.signupAttendee.attendeeUserId !=null}">
+									   					<h:panelGrid columns="2" columnClasses="editAddImages,attName" rendered="#{waiterWrapper.signupAttendee.attendeeUserId !=null}">
 									   						<h:commandLink id="removeWaitingList" action="#{OrganizerSignupMBean.removeAttendeeFromWList}" title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 									   							<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" styleClass="openCloseImageIcon"/>
 									   							<f:param id="waiterUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{waiterWrapper.signupAttendee.attendeeUserId}"/>
+									   							<h:outputText value="&nbsp;" escape="false" />
 									   						</h:commandLink>
-									   						<h:outputText value="&nbsp;" escape="false" />
-									   						<h:outputText value="#{waiterWrapper.displayName}" escape="false"/>				   					
-									   					</h:panelGroup>		  
+									   						<h:panelGroup>
+									   							<h:outputText value="#{waiterWrapper.displayName}" escape="false"/>
+									   						</h:panelGroup>				   					
+									   					</h:panelGrid>		  
 									   				</h:column>				   		
 									   			</h:dataTable>
 									   			
 									   			<h:panelGroup id="addWaiter" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 									   				<h:outputLabel rendered="#{!timeSlotWrapper.timeSlot.available}" onclick="showHideAddWaiterPanel('#{timeSlotWrapper.positionInTSlist}');" styleClass="addWaiter">
+									   					<h:graphicImage value="/images/spacer.gif" width="4" height="16" alt="spacer" style="border:none"/>
 								   						<h:graphicImage value="/images/add.png"  alt="add an waiter"  title="#{msgs.event_tool_tips_add}" style="border:none"  styleClass="openCloseImageIcon"/>
 								   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" />	
 								   					</h:outputLabel>
-								   					<h:panelGroup rendered="#{timeSlotWrapper.timeSlot.available}" style="margin-left: 1px;">
+								   					<h:panelGroup rendered="#{timeSlotWrapper.timeSlot.available}" style="margin-left: 2px;">
 								   						<h:graphicImage value="/images/addDisabled.png"  alt="add an waiter" title="#{msgs.event_tool_tips_action_disabled_label}" style="border:none" />
 								   						<h:outputText value="#{msgs.event_add_attendee}" escape="false" styleClass="disabledAddAttendee"/>
 								   					</h:panelGroup>

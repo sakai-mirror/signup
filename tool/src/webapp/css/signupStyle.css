@@ -138,6 +138,10 @@ table.organizerAction td {
 	text-align: center;
 }
 
+.editAddImages{
+	white-space: nowrap;
+}
+
 .attendee_status {
 	border: 1px solid #fff;
 	color: blue;
@@ -151,7 +155,7 @@ table.organizerAction td {
 	margin: .4em 1em;
 	border: 1px solid #fff;
 	cursor: pointer;
-	line-height: .8em;
+	line-height: 1.1em;
 	color: darkred;
 }
 
@@ -159,7 +163,7 @@ table.organizerAction td {
 	margin: .4em 1em;
 	border: 1px solid #fff;
 	cursor: pointer;
-	line-height: .8em;
+	line-height: 1.1em;
 	background: rgb(221, 221, 221);
 }
 
@@ -343,7 +347,6 @@ table.instruction td.desc{
 }
 
 .addWaiter {
-	margin-left: 2px;
 	cursor: pointer;
 	color: #35b;
 	text-decoration: none !important;
