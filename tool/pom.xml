@@ -21,7 +21,7 @@
 	<parent>
 		<artifactId>signup-base</artifactId>
 		<groupId>org.sakaiproject</groupId>
-		<version>2.6-SNAPSHOT</version>
+		<version>2.7-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<name>Sakai Signup Tool</name>
@@ -109,15 +109,21 @@
 
 		<!-- Sakai JSF dependencies -->
 		<dependency>
-			<groupId>org.sakaiproject</groupId>
-			<artifactId>sakai-jsf-tool</artifactId>
-			<version>${sakai.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.sakaiproject</groupId>
-			<artifactId>sakai-jsf-app</artifactId>
-			<version>${sakai.version}</version>
-		</dependency>
+            <groupId>org.sakaiproject.jsf</groupId>
+            <artifactId>jsf-tool</artifactId>
+			<version>[2.7.0,2.8.0)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.jsf</groupId>
+            <artifactId>jsf-app</artifactId>
+			<version>[2.7.0,2.8.0)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.jsf</groupId>
+            <artifactId>jsf-widgets-sun-depend</artifactId>
+			<version>[2.7.0,2.8.0)</version>
+            <type>pom</type>
+        </dependency>		
 
 		<dependency>
 			<groupId>jsf</groupId>
@@ -164,12 +170,9 @@
 		</dependency>
 
 		<!-- this will pull the correct dependency set for a Sun Widget Set -->
-		<dependency>
-			<groupId>org.sakaiproject</groupId>
-			<artifactId>sakai-depend-jsf-widgets-sun</artifactId>
-			<version>${sakai.version}</version>
-			<type>pom</type>
-		</dependency>
+		
+
+		
 		<!-- jars required for JSF -->
 		<dependency>
 			<groupId>commons-validator</groupId>
