@@ -38,7 +38,7 @@
 			<groupId>org.sakaiproject</groupId>
 			<artifactId>sakai-calendar-api</artifactId>
 			<version>${sakai.version}</version>
-		</dependency>		
+		</dependency>	
 		<dependency>
 			<groupId>${sakai.spring.groupId}</groupId>
 			<artifactId>${sakai.spring.artifactId}</artifactId>

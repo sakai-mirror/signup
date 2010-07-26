@@ -32,7 +32,7 @@ import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
-import org.sakaiproject.genericdao.hibernate.HibernateCompleteGenericDao;
+import org.sakaiproject.genericdao.hibernate.HibernateGeneralGenericDao;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.springframework.dao.DataAccessException;
 
@@ -43,7 +43,7 @@ import org.springframework.dao.DataAccessException;
  * creating, updating and removing SignupMeeting objects.
  * </p>
  */
-public class SignupMeetingDaoImpl extends HibernateCompleteGenericDao implements
+public class SignupMeetingDaoImpl extends HibernateGeneralGenericDao implements
 		SignupMeetingDao {
 
 	private static Log log = LogFactory.getLog(SignupMeetingDaoImpl.class);
