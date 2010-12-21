@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/downloadEvents/EventWorksheet.java $
- * $Id: EventWorksheet.java 66940 2010-03-30 00:10:04Z guangzheng.liu@yale.edu $
+ * $URL: https://sakai-svn.its.yale.edu/svn/signup/branches/2-6-dev/tool/src/java/org/sakaiproject/signup/tool/downloadEvents/EventWorksheet.java $
+ * $Id: EventWorksheet.java 4598 2010-01-26 18:51:33Z gl256 $
  ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University
@@ -786,8 +786,10 @@ public class EventWorksheet implements MeetingTypes, SignupBeanConstants {
 
 		sb.append("  -  ");
 		sb.append(getTime(ts.getEndTime()).toStringLocalTime());
-		if (isCrossDay)
+		if (isCrossDay){
 			sb.append(", " + getShortWeekDayName(ts.getEndTime()));
+			sb.append(", " + getTime(ts.getEndTime()).toStringLocalShortDate());
+		}
 
 		return sb.toString();
 	}

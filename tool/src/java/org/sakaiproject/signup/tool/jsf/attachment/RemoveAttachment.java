@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/jsf/attachment/RemoveAttachment.java $
- * $Id: RemoveAttachment.java 64842 2009-11-20 18:52:38Z guangzheng.liu@yale.edu $
+ * $URL: https://sakai-svn.its.yale.edu/svn/signup/branches/2-6-dev/tool/src/java/org/sakaiproject/signup/tool/jsf/attachment/RemoveAttachment.java $
+ * $Id: RemoveAttachment.java 4456 2009-09-28 20:51:21Z gl256 $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/jsf/organizer/action/AddWaiter.java $
- * $Id: AddWaiter.java 64842 2009-11-20 18:52:38Z guangzheng.liu@yale.edu $
+ * $Id: AddWaiter.java 59241 2009-03-24 15:52:18Z guangzheng.liu@yale.edu $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

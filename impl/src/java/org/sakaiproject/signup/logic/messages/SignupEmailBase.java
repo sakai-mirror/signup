@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/impl/src/java/org/sakaiproject/signup/logic/messages/SignupEmailBase.java $
- * $Id: SignupEmailBase.java 65703 2010-01-13 16:55:26Z guangzheng.liu@yale.edu $
+ * $Id: SignupEmailBase.java 59241 2009-03-24 15:52:18Z guangzheng.liu@yale.edu $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

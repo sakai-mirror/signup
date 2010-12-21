@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/jsf/attendee/AttendeeSignupMBean.java $
- * $Id: AttendeeSignupMBean.java 65703 2010-01-13 16:55:26Z guangzheng.liu@yale.edu $
+ * $Id: AttendeeSignupMBean.java 56827 2009-01-13 21:52:18Z guangzheng.liu@yale.edu $
  ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

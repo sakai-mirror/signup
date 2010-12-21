@@ -103,7 +103,7 @@ public class CancelRestoreTimeslot extends SignupAction {
 	private void cancel(SignupTimeslot timeslot, boolean cancelAction) {
 		timeslot.setCanceled(cancelAction);
 		List<SignupAttendee> attendees = timeslot.getAttendees();
-		if( cancelAction ==true && (attendees !=null || !attendees.isEmpty())){
+		if( cancelAction ==true && attendees !=null && !attendees.isEmpty()){
 			for (SignupAttendee attendee : attendees) {
 				signupEventTrackingInfo.addOrUpdateAttendeeAllocationInfo(attendee, timeslot,
 						SignupEmailFacade.SIGNUP_ATTENDEE_CANCEL, true);

@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/impl/src/java/org/sakaiproject/signup/logic/messages/AutoReminderEmail.java $
- * $Id: AutoReminderEmail.java 65191 2009-12-11 19:20:40Z guangzheng.liu@yale.edu $
+ * $URL: https://sakai-svn.its.yale.edu/svn/signup/branches/2-6-dev/impl/src/java/org/sakaiproject/signup/logic/messages/AutoReminderEmail.java $
+ * $Id: AutoReminderEmail.java 4554 2009-12-04 21:52:14Z gl256 $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

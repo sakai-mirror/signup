@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/impl/src/java/org/sakaiproject/signup/logic/messages/ModifyMeetingEmail.java $
- * $Id: ModifyMeetingEmail.java 65191 2009-12-11 19:20:40Z guangzheng.liu@yale.edu $
+ * $Id: ModifyMeetingEmail.java 59241 2009-03-24 15:52:18Z guangzheng.liu@yale.edu $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

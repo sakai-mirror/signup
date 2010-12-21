@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/SignupServlet.java $
- * $Id: SignupServlet.java 64842 2009-11-20 18:52:38Z guangzheng.liu@yale.edu $
+ * $Id: SignupServlet.java 59188 2009-03-23 15:42:38Z guangzheng.liu@yale.edu $
  ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University

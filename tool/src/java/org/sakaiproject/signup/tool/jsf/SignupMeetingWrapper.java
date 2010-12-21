@@ -1,6 +1,6 @@
 /**********************************************************************************
  * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/tool/src/java/org/sakaiproject/signup/tool/jsf/SignupMeetingWrapper.java $
- * $Id: SignupMeetingWrapper.java 64842 2009-11-20 18:52:38Z guangzheng.liu@yale.edu $
+ * $Id: SignupMeetingWrapper.java 59241 2009-03-24 15:52:18Z guangzheng.liu@yale.edu $
 ***********************************************************************************
  *
  * Copyright (c) 2007, 2008, 2009 Yale University
@@ -266,7 +266,7 @@ public class SignupMeetingWrapper implements SignupBeanConstants {
 		if (meeting.getRecurrenceId() != null && isSubRecurringMeeting())
 			return this.recurId;
 
-		return meeting.getRecurrenceId() != null ? meeting.getRecurrenceId().toString() : meeting.getId().toString();
+		return meeting.getRecurrenceId() != null ? meeting.getRecurrenceId().toString() : (meeting.getId().toString()+"_on");
 	}
 
 	/*
