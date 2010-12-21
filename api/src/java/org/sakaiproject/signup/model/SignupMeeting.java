@@ -34,6 +34,10 @@ import org.sakaiproject.signup.logic.Permission;
  * mapped directly to the DB storage by Hibernate
  * </p>
  */
+/**
+ * @author gl256
+ *
+ */
 public class SignupMeeting implements MeetingTypes {
 
 	private Long id;
@@ -86,6 +90,8 @@ public class SignupMeeting implements MeetingTypes {
 	private List<SignupAttachment> signupAttachments;
 
 	private Permission permission;
+	
+	private boolean emailAttendeesOnly;
 
 	/**
 	 * check if the meeting/event is cancelled
@@ -571,6 +577,16 @@ public class SignupMeeting implements MeetingTypes {
 	public void setRepeatUntil(Date r) {
 		repeatUntil = r;
 	}
+	
+	//numbers of occurrences
+	private int repeatNum;	
+	public int getRepeatNum() {
+		return repeatNum;
+	}
+
+	public void setRepeatNum(int repeatNum) {
+		this.repeatNum = repeatNum;
+	}
 
 	/**
 	 * It's a getter for UI or email part.
@@ -671,5 +687,22 @@ public class SignupMeeting implements MeetingTypes {
 			return true;
 	}
 	
+	private boolean inMultipleCalendarBlocks = false;
+
+	public boolean isInMultipleCalendarBlocks() {
+		return inMultipleCalendarBlocks;
+	}
+
+	public void setInMultipleCalendarBlocks(boolean inMultipleCalendarBlocks) {
+		this.inMultipleCalendarBlocks = inMultipleCalendarBlocks;
+	}
+
+	public boolean isEmailAttendeesOnly() {
+		return emailAttendeesOnly;
+	}
+
+	public void setEmailAttendeesOnly(boolean emailAttendeesOnly) {
+		this.emailAttendeesOnly = emailAttendeesOnly;
+	}
 	
 }

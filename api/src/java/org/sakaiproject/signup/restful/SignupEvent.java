@@ -80,6 +80,10 @@ public class SignupEvent implements Entity, MeetingTypes {
 	private Date startTime;
 
 	private Date endTime;
+	
+	private Date myStartTime;
+	
+	private Date myEndTime;
 
 	private Date signupBegins;
 
@@ -377,6 +381,29 @@ public class SignupEvent implements Entity, MeetingTypes {
 
 	public void setRepeatType(String repeatType) {
 		this.repeatType = repeatType;
+	}
+	
+	public boolean isMySignupEvents(){
+		if(myStartTime !=null && myEndTime !=null)
+			return true;
+		else
+			return false;
+	}
+
+	public Date getMyStartTime() {
+		return myStartTime;
+	}
+
+	public void setMyStartTime(Date myStartTime) {
+		this.myStartTime = myStartTime;
+	}
+
+	public Date getMyEndTime() {
+		return myEndTime;
+	}
+
+	public void setMyEndTime(Date myEndTime) {
+		this.myEndTime = myEndTime;
 	}
 
 	/**

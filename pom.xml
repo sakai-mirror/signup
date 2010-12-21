@@ -12,7 +12,6 @@
 	<name>Sakai Signup Project</name>
 	<groupId>org.sakaiproject</groupId>
 	<artifactId>signup-base</artifactId>
-	<version>2.6-SNAPSHOT</version>
 	<inceptionYear>2007</inceptionYear>
 	
 	<scm>

@@ -47,6 +47,9 @@ import org.sakaiproject.tool.cover.SessionManager;
  * <p>
  * This is a class for JSF Sign-up tool UIBean. It provides permission editing
  * functionality for Sign-up tool.
+ * 
+ * @author Peter Liu
+ * 
  * </P>
  */
 public class SignupPermissionsUpdateBean {

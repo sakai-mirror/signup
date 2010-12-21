@@ -1,3 +1,17 @@
+alter table signup_site_groups drop foreign key FKC72B75255084316;
+alter table signup_sites drop foreign key FKCCD4AC25CB1E8A17;
+alter table signup_ts drop foreign key FK41154B06CB1E8A17;
+alter table signup_ts_attendees drop foreign key FKBAB08100CDB30B3D;
+alter table signup_ts_waitinglist drop foreign key FK3AB9A8B2CDB30B3D;
+alter table signup_attachments drop foreign key FK3BCB709CB1E8A17;
+drop table if exists signup_meetings;
+drop table if exists signup_site_groups;
+drop table if exists signup_sites;
+drop table if exists signup_ts;
+drop table if exists signup_ts_attendees;
+drop table if exists signup_ts_waitinglist;
+drop table if exists signup_attachments;
+
 create table signup_meetings (
 	id bigint not null auto_increment, 
 	version integer not null, 
@@ -25,7 +39,7 @@ create table signup_site_groups (
 	signup_site_id bigint not null, 
 	title varchar(255), 
 	group_id varchar(255) not null, 
-	calendar_event_id varchar(255), 
+	calendar_event_id varchar(2000), 
 	calendar_id varchar(255), 
 	list_index integer not null, 
 	primary key (signup_site_id, list_index)
@@ -36,7 +50,7 @@ create table signup_sites (
 	version integer not null, 
 	title varchar(255), 
 	site_id varchar(255) not null, 
-	calendar_event_id varchar(255), 
+	calendar_event_id varchar(2000), 
 	calendar_id varchar(255), 
 	meeting_id bigint not null, 
 	list_index integer, 

@@ -27,6 +27,14 @@ import javax.faces.context.FacesContext;
 
 import org.sakaiproject.util.ResourceLoader;
 
+/**
+ * <p>
+ * This class will provides methods for manage Locale issues
+ * </P>
+ * 
+ * @author Peter Liu
+ */
+
 public class UserLocale {
 
 	private ResourceLoader rb = new ResourceLoader("messages");

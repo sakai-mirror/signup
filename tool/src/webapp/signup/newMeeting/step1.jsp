@@ -17,7 +17,7 @@
         <script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/newMeetingStep1.js"></script>                 
         <sakai:view_content>
      		<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/>
-            
+
             <h:form id="meeting" >              
                  <sakai:view_title value="#{msgs.create_new_event} #{msgs.basic}"/>
                 <sakai:doc_section>
@@ -39,6 +39,7 @@
 		                    <h:panelGroup>                    
 		                        <h:inputText id="name" size="40" value="#{NewSignupMeetingBean.signupMeeting.title}" styleClass="editText" required="true"  >
 		                        <f:validator validatorId="Signup.EmptyStringValidator"/>
+		                        <f:validateLength maximum="255" />
 		                        </h:inputText>
 		                        <h:message for="name" errorClass="alertMessageInline"/>
 		                    </h:panelGroup> 
@@ -50,6 +51,7 @@
 		                    <h:panelGroup>
 		                        <h:inputText id="location" size="40" value="#{NewSignupMeetingBean.signupMeeting.location}" styleClass="editText" required="true" >
 		                            <f:validator validatorId="Signup.EmptyStringValidator"/>
+		                            <f:validateLength maximum="255" />
 		                        </h:inputText>
 		                        <h:message for="location" errorClass="alertMessageInline"/>
 		                    </h:panelGroup>                           
@@ -98,8 +100,10 @@
 							</h:panelGroup>
 							
 		                 	         
-		                                               
-		                     <h:outputText styleClass="titleText" value="#{msgs.event_recurrence}"  />                                          
+		                     <h:panelGroup>
+		                     	<h:outputText value="#{msgs.star_character}" style="color:#B11;" />  
+		                     	<h:outputText styleClass="titleText" value="#{msgs.event_recurrence}"  />  
+		                     </h:panelGroup>                          
 		                     <h:panelGroup>                            
 		                            <h:selectOneMenu id="recurSelector" value="#{NewSignupMeetingBean.repeatType}" styleClass="titleText" onchange="isShowCalendar(value); return false;">
 		                                <f:selectItem itemValue="no_repeat" itemLabel="#{msgs.label_once}"/>
@@ -108,14 +112,31 @@
 		                                <f:selectItem itemValue="weekly" itemLabel="#{msgs.label_weekly}"/>
 		                                <f:selectItem itemValue="biweekly" itemLabel="#{msgs.label_biweekly}"/>                           
 		                             </h:selectOneMenu>
-		                                                
-		                            <h:panelGroup id="utilCalendar" style="margin-left:35px;">
-		                            	<h:outputText value="#{msgs.star_character}" style="color:#B11;" />                    
-		                            	<h:outputText value="#{msgs.event_until}" style="font-weight:bold;" styleClass="titleText"/>
-		                            	 <!-- t:inputCalendar id="ex" value=""  renderAsPopup="true" monthYearRowClass="" renderPopupButtonAsImage="true" dayCellClass=""   styleClass="untilCalendar"/ -->             					
-		                                <t:inputDate id="until" type="date"  value="#{NewSignupMeetingBean.repeatUntil}"  popupCalendar="true"   styleClass="untilCalendar"/>                                  	         	 
-		                		        <h:message for="until" errorClass="alertMessageInline" style="margin-left:10px" /> 
-		                           </h:panelGroup>                    
+		                            
+			                         <h:panelGroup id="utilCalendar" style="margin-left:35px;">
+			                           <h:panelGrid columns="2" >
+			                               <h:outputText value="#{msgs.event_end_after}" style="margin-left:5px" />
+			                           
+				                           <h:panelGrid columns="2">
+				                            	<h:selectOneRadio id="recurNumDateChoice" value="#{NewSignupMeetingBean.recurLengthChoice}" styleClass="titleText" layout="pageDirection" >
+					                                <f:selectItem itemValue="0" />
+					                                <f:selectItem itemValue="1" />
+				                               </h:selectOneRadio>
+				                               <h:panelGrid columns="1">
+					                                <h:panelGroup id="numOfRepeat" style="margin-left:3px;">
+						                                <h:inputText id="numRepeat"  value="#{NewSignupMeetingBean.occurrences}" maxlength="2" size="1" onkeyup="validateRecurNum();" styleClass="untilCalendar" /> 
+						                                <h:outputText value="#{msgs.event_occurrences}" style="margin-left:10px" />
+					                		        </h:panelGroup>
+					                                <h:panelGroup id="endOfDate" style="margin-left:3px;">
+						                            	 <!-- t:inputCalendar id="ex" value=""  renderAsPopup="true" monthYearRowClass="" renderPopupButtonAsImage="true" dayCellClass=""   styleClass="untilCalendar"/ -->             					
+						                                <t:inputDate id="until" type="date"  value="#{NewSignupMeetingBean.repeatUntil}"  popupCalendar="true"   styleClass="untilCalendar"/>
+						                		        <h:message for="until" errorClass="alertMessageInline" style="margin-left:10px" /> 
+					                		        </h:panelGroup>
+				                		        </h:panelGrid>
+				                		      </h:panelGrid> 
+				                		     </h:panelGrid>
+			                       </h:panelGroup>
+		                                              
 		                	 </h:panelGroup>
 		                	 
 				    		<%-- signup begin_deadline --%>
@@ -124,7 +145,7 @@
 		                    </h:panelGroup>
 		                    <h:panelGroup styleClass="signupBDeadline" id="signup_beginDeadline_2">
 		                       		 <h:inputText id="signupBegins" value="#{NewSignupMeetingBean.signupBegins}" size="2" required="true">
-		                            	<f:validateLongRange minimum="0" maximum="1000"/>
+		                            	<f:validateLongRange minimum="0" maximum="99999"/>
 		                        	</h:inputText>
 		                        	<h:selectOneMenu id="signupBeginsType" value="#{NewSignupMeetingBean.signupBeginsType}" onchange="isSignUpBeginStartNow(value);" style="padding-left:5px; margin-right:5px">
 		                            	<f:selectItem itemValue="minutes" itemLabel="#{msgs.label_minutes}"/>
@@ -141,7 +162,7 @@
 		                   </h:panelGroup>
 		                    <h:panelGroup styleClass="signupBDeadline" id="signup_beginDeadline_4">
 		                        <h:inputText id="signupDeadline" value="#{NewSignupMeetingBean.deadlineTime}" size="2" required="true">
-		                            <f:validateLongRange minimum="0" maximum="1000"/>
+		                            <f:validateLongRange minimum="0" maximum="99999"/>
 		                        </h:inputText>
 		                        <h:selectOneMenu value="#{NewSignupMeetingBean.deadlineTimeType}" style="padding-left:5px; margin-right:5px">
 		                            <f:selectItem itemValue="minutes" itemLabel="#{msgs.label_minutes}"/>
@@ -225,13 +246,13 @@
 						               				<h:panelGroup>            
 						                        		<h:outputText value="<div id='multiple' styleClass='mi' >" escape="false"/>
 						                           
-								                        	<h:panelGrid columns="2" styleClass="mi" columnClasses="miCol1,miCol2">                                                
+								                        	<h:panelGrid columns="2" id="mutipleCh" styleClass="mi" columnClasses="miCol1,miCol2">                                                
 											                        <h:outputText value="#{msgs.event_num_slot_avail_for_signup}" />
 												                    <h:inputText  id="numberOfSlot" value="#{NewSignupMeetingBean.numberOfSlots}" size="2" styleClass="editText" onkeyup="getSignupDuration();return false;" style="margin-left:12px" />
 											                        <h:outputText value="#{msgs.event_num_participant_per_timeslot}" styleClass="titleText" escape="false"/>                    
 													                <h:inputText id="numberOfAttendees" value="#{NewSignupMeetingBean.numberOfAttendees}" styleClass="editText" size="2" style="margin-left:12px" onkeyup="validateAttendee();return false;" />
 											                    	<h:outputText value="#{msgs.event_duration_each_timeslot_not_bold}" styleClass="titleText" escape="false"/>
-																	<h:inputText id='currentTimeslotDuration' value="0" styleClass='longtext' size="2" onkeyup="this.blur();" onmouseup="this.blur();" style="margin-left:12px;color:#b11" />             
+																	<h:inputText id='currentTimeslotDuration' value="0" styleClass='longtext_red' size="2" onkeyup="this.blur();" style="margin-left:12px" onmouseup="this.blur();" />             
 								                			</h:panelGrid>          
 						                         
 						                        		<h:outputText value="</div>" escape="false" />
@@ -261,7 +282,30 @@
 					                 				<h:outputText id="announ" value="&nbsp;" style='display:none' styleClass="titleText" escape="false"/>
 					              		</h:panelGrid>
 				              
-				              </h:panelGrid>                
+				              </h:panelGrid> 
+				              
+				              <h:outputText id="userDefTsChoice_1" value="" style="display:none;"/>
+				              <h:panelGroup id="userDefTsChoice_2" style="display:none;" styleClass="longtext" >
+				              		<h:panelGrid style="margin:-10px 0px 0px 25px;">
+				              			<h:panelGroup>
+											<h:selectBooleanCheckbox id="userDefTsChoice" value="#{NewSignupMeetingBean.userDefinedTS}" onclick="userDefinedTsChoice();" />
+											<h:outputText value="#{msgs.label_custom_timeslots}"  escape="false"/>
+										</h:panelGroup>
+										<h:panelGroup id="createEditTS" style="display:none;padding-left:35px;">
+											<h:commandLink id="createTS" action="#{NewSignupMeetingBean.createUserDefTimeSlots}" rendered="#{!NewSignupMeetingBean.userDefineTimeslotBean.userEverCreateCTS}">
+												<h:graphicImage value="/images/cal.gif" alt="close" style="border:none;cursor:pointer; padding-right:5px;" styleClass="openCloseImageIcon" />
+												<h:outputText value="#{msgs.label_create_timeslots}" escape="false" styleClass="activeTag"/>
+											</h:commandLink>
+											<h:panelGroup rendered="#{NewSignupMeetingBean.userDefineTimeslotBean.userEverCreateCTS}">
+												<h:commandLink action="#{NewSignupMeetingBean.editUserDefTimeSlots}" >
+													<h:graphicImage value="/images/cal.gif" alt="close" style="border:none;cursor:pointer; padding-right:5px;" styleClass="openCloseImageIcon" />
+													<h:outputText value="#{msgs.label_edit_timeslots}" escape="false" styleClass="activeTag"/>
+												</h:commandLink>
+											</h:panelGroup>
+											
+										</h:panelGroup>	
+									</h:panelGrid>	
+							  </h:panelGroup>              
 		        	</h:panelGrid>
 		        	
 		          
@@ -281,7 +325,8 @@
 	         //initialization of the page
 			 initialLayoutsSetup();
 	         otherUserSitesSelection();
-	         replaceCalendarImageIcon();    
+	         replaceCalendarImageIcon(); 
+	         userDefinedTsChoice();   
 		</script>
     </f:verbatim>
 </f:view>

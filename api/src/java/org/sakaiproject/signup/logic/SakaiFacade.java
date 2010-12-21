@@ -149,6 +149,15 @@ public interface SakaiFacade {
 	 * @return true if the user has access, false otherwise
 	 */
 	boolean isAllowedGroup(String userId, String permission, String siteId, String groupId);
+	
+	/**
+	 * get all the published sites, which user joins in
+	 * 
+	 * @param userId
+	 *            userId the internal user id (not username)
+	 * @return a list of SignupSite objects
+	 */
+	public List<String> getUserPublishedSiteIds(String userId);
 
 	/**
 	 * get all the sites, which user joins in

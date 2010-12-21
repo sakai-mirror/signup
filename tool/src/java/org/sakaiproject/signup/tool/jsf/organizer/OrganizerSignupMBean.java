@@ -62,6 +62,9 @@ import org.sakaiproject.user.api.UserNotDefinedException;
  * This JSF UIBean class will handle information exchanges between Organizer's
  * event/meeting view page:<b>orgSignupMeeting.jsp</b> and backbone system. It
  * provides all the necessary business logic
+ * 
+ * @author Peter Liu
+ * 
  * </P>
  */
 public class OrganizerSignupMBean extends SignupUIBaseBean {

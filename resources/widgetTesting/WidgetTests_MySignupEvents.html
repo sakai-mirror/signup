@@ -1,12 +1,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	
 	<script type="text/javascript" language="JavaScript" src="js/trimpath.js"></script>
 	<script type="text/javascript" language="JavaScript" src="js/jquery.js"></script>
 	<script type="text/javascript" language="JavaScript" src="js/eventsData.js"></script>
 	<script type="text/javascript" language="JavaScript" src="js/signupEvents.js"></script>
 </head>
-
 <body id="body-show">
 <script type="text/javascript" language="JavaScript" src="js/sdata_alternative.js"></script>
 <h3 style='text-align:center'>TESTING PAGE FOR SIGN-UP RESTFUL</h3>
@@ -19,17 +17,17 @@
 
 <h4>Display Sign-up Events Via Direct Ajax Access To Your Application Server</h4>
   <p>Important Note: you need to login in first to establish a session for ajax access. 
-        If you use Firefox, the files should be <br>at server side due Firefox security. It works for IE 7 or 8 and Safari as local files.
-        However, this local test won't work on Window 7 OS.
+      If you use Firefox, the files should be <br> at server side due Firefox security. It works for IE 7 or 8 and Safari as local files.
+      However, this local test won't work on Window 7 OS.
   </p>
   <table>
-	<tr><td>View Range: </td><td noWrap><input id='nextDays' type='text' value='60' name='nextDays'/> [Empty value means view all]</td></tr>
-	<tr><td>Enter Your Site Id: </td><td noWrap><input id='userSite' type='text' value='' name='userSite'/> [Example: c8f0e8a4-31fd-4525-ac5e-6788d612347c ]</td></tr>
+	<tr><td>View Range: </td><td noWrap><input id='nextDays' type='text' value='30' name='nextDays'/> [Empty value means view next 30 days range]</td></tr>
+	<tr><td>Enter Your User Id: </td><td noWrap><input id='userId' type='text' value='' name='userId'/> [Example: c8f0e8a4-31fd-4525-ac5e-6788d612347c ]</td></tr>
 	<tr><td>Enter Server Access URL: </td><td noWrap><input id="serverUrl" type='text' value="http://localhost:8080" name="serverUrl"/> </td></tr>
   </table>
 
   <p id="helloworld_message" >
-     <input type="button" onclick="showMeAjaxEventList.click(); return false; " value="Show Signup Event List" />
+     <input type="button" onclick="showMySignupAjaxEventList.click(); return false; " value="Show My Signup Events" />
   </p>
   
 </div>
@@ -45,14 +43,14 @@
 		<th>Time</th>
 		<th>Status</th>
 	</tr>
-	{if signupEvent_collection.length >0}
-	{for event in signupEvent_collection}
+	{if mySignup_collection.length >0}
+	{for event in mySignup_collection}
 		<tr>
 			<td><a href="#" onclick="showEventDetail.click(${event.id},'${event.siteId}')">${event.title}</a></td>
 			<td>${event.organizerName}</td>
 			<td>${event.location}</td>
 			<td>${event.date}</td>
-			<td>${event.startTime} - ${event.endTime}</td>
+			<td>${event.myStartTime} - ${event.myEndTime}</td>
 			<td>${event.availableStatus}</td>
 		</tr>
 

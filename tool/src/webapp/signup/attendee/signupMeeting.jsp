@@ -20,7 +20,7 @@
 			
 		<h:form id="signupMeeting">
 			<sakai:tool_bar>
-				<sakai:tool_bar_item value="#{msgs.event_pageTop_link_for_download}" action="#{DownloadEventBean.downloadOneEvent}" />
+				<sakai:tool_bar_item id="skTbar23" value="#{msgs.event_pageTop_link_for_download}" action="#{DownloadEventBean.downloadOneEvent}" />
 				<h:outputLink id="print" value="javascript:window.print();" style="vertical-align:bottom;">
 					<h:graphicImage url="/images/printer.png"
 							alt="#{msgs.print_friendly}" title="#{msgs.print_friendly}" />
@@ -240,8 +240,11 @@
 								<f:convertDateTime pattern="h:mm a"/>
 							</h:outputText>
 							<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{AttendeeSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-								<f:convertDateTime pattern=", EEE" />
-						</h:outputText>	
+								<f:convertDateTime pattern=", EEE," />
+							</h:outputText>
+							<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{AttendeeSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+								<f:convertDateTime  dateStyle="short"/>
+							</h:outputText>	
 						</h:panelGroup>
 					</h:column>
 
@@ -288,7 +291,7 @@
 					   			</h:dataTable>
 					   			<h:dataTable id="peopleOnWaiting" value="#{timeSlotWrapper.waitingList}" var="attendeeWrapper" rendered="#{timeSlotWrapper.sizeOfWaitingList >0}"  styleClass="peopleOnListTable" columnClasses="waitingList">
 					   				<h:column>
-					   					<h:outputText value="#{attendeeWrapper.displayName}" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" title="#{msgs.event_tool_tip_on_waitinglist}"/>   					
+					   					<h:outputText value="#{attendeeWrapper.displayName}" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" title="#{msgs.event_tool_tip_on_waitinglist}" />   					
 					   				</h:column>				   		
 					   			</h:dataTable>
 					   		</h:panelGroup>	

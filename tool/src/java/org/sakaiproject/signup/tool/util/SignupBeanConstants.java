@@ -37,6 +37,8 @@ public interface SignupBeanConstants {
 	public static final String ATTENDEE_USER_ID = "attendeeUserId";
 
 	public static final String THIRTY_DAYS = "30";
+	
+	public static final String SIXTY_DAYS = "60";
 
 	public static final String NINTY_DAYS = "90";
 
@@ -106,6 +108,8 @@ public interface SignupBeanConstants {
 	public static final String ADD_MEETING_STEP1_PAGE_URL = "addMeetingStep1";
 
 	public static final String ADD_MEETING_STEP2_PAGE_URL = "addMeetingStep2";
+	
+	public static final String CUSTOM_DEFINED_TIMESLOT_PAGE_URL = "userDefinedTsBlocks";
 
 	public static final String ATTACH_RECURRING = "recur";
 

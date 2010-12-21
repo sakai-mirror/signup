@@ -237,7 +237,8 @@ public class SignupEmailFacadeImpl implements SignupEmailFacade {
 		List<SignupUser> signupUsers = sakaiFacade.getAllUsers(meeting);
 
 		List<EmailUserSiteGroup> userSiteGroupList = getUserSiteEmailGroups(signupUsers);
-		boolean isException = false;		
+		boolean isException = false;
+		/*divide email-send out by site to site*/
 		for (EmailUserSiteGroup emailUserSiteGroup : userSiteGroupList) {
 			if (!emailUserSiteGroup.isPublishedSite())
 				continue;// skip sending email
@@ -255,15 +256,53 @@ public class SignupEmailFacadeImpl implements SignupEmailFacade {
 					 * also excluding them for next step.
 					 */
 					sendEmailToPreAssignedAttendee(emailUserSiteGroup, meeting);
-					/* get the people list excluding pre-assigned ones */
-					userIds = emailUserSiteGroup.getUserInternalIds();
-					sakaiUsers = userDirectoryService.getUsers(userIds);
+					
+					/*Check to see if email is for all participants*/
+					if(!meeting.isEmailAttendeesOnly()){
+						/* get the people list excluding pre-assigned ones */
+						userIds = emailUserSiteGroup.getUserInternalIds();
+						sakaiUsers = userDirectoryService.getUsers(userIds);
+					}
+					else 
+						continue;//no need to go down
 
 				} else if (messageType.equals(SIGNUP_MEETING_MODIFIED)) {
-					userIds = emailUserSiteGroup.getUserInternalIds();
-					sakaiUsers = userDirectoryService.getUsers(userIds);
 					organizer = userDirectoryService.getUser(getSakaiFacade().getCurrentUserId());
 					email = new ModifyMeetingEmail(organizer, meeting, this.sakaiFacade, emailUserSiteGroup.getSiteId());
+					if (! meeting.isEmailAttendeesOnly()){
+						userIds = emailUserSiteGroup.getUserInternalIds();
+						sakaiUsers = userDirectoryService.getUsers(userIds);
+					}
+					else if (meeting.isEmailAttendeesOnly()){
+						List<SignupTimeslot> tsList = meeting.getSignupTimeSlots();
+						User user = null;
+						List<SignupUser> sgpUsers = emailUserSiteGroup.getSignupUsers();
+						sakaiUsers = new ArrayList<User>();
+						if(tsList !=null){
+							for (SignupTimeslot ts : tsList) {
+								List<SignupAttendee> attList = ts.getAttendees();
+								if(attList !=null){
+									for (SignupAttendee att : attList) {
+										/*test to see if attendee is in this site-group*/
+										for (SignupUser spgUser : sgpUsers) {
+											if(att.getAttendeeUserId().equals(spgUser.getInternalUserId())){
+												try{
+													user = userDirectoryService.getUser(att.getAttendeeUserId());
+												} catch (UserNotDefinedException e) {
+													logger.warn("User is not found for userId: " + att.getAttendeeUserId());
+													isException = true;
+												}
+												sakaiUsers.add(user);
+												break;
+											}
+										}
+										
+									}
+								}
+								
+							}
+						}
+					}
 				}
 
 				if (email != null){

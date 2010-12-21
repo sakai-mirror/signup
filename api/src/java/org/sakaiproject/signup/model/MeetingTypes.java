@@ -40,6 +40,8 @@ public interface MeetingTypes {
 	 * requires signup
 	 */
 	static final String GROUP = "group";
+	
+	static final String CUSTOM_TIMESLOTS="custom_ts";
 
 	/**
 	 * This represents an event/meeting, which is an open session and signup is

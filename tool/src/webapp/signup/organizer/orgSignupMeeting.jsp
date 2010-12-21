@@ -224,9 +224,9 @@
 					 styleClass="signupTable" style="width:98%">
 							<h:column>		   
 								<f:facet name="header">
-									<h:outputText value="#{msgs.tab_time_slot}"/>
+									<h:outputText value="#{msgs.tab_time_slot}" style="padding-left:15px;"/>
 								</f:facet>
-								<h:panelGrid columns="1">
+								<h:panelGrid columns="1" columnClasses="noWrapCol">
 										<h:panelGroup id="timeslot">
 											<h:graphicImage value="/images/spacer.gif" width="15" height="13" alt="spacer" style="border:none"
 												 rendered="#{!timeSlotWrapper.timeSlot.locked && !timeSlotWrapper.timeSlot.canceled && !OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired }"/>
@@ -247,7 +247,10 @@
 													<f:convertDateTime pattern="h:mm a" />
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE" />
+													<f:convertDateTime pattern=", EEE, " />
+												</h:outputText>
+												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime  dateStyle="short"/>
 												</h:outputText>
 											</h:outputLink>
 											<h:panelGroup rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
@@ -262,7 +265,10 @@
 													<f:convertDateTime pattern="h:mm a" />
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE" />
+													<f:convertDateTime pattern=", EEE, " />
+												</h:outputText>
+												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
+													<f:convertDateTime  dateStyle="short"/>
 												</h:outputText>
 											</h:panelGroup>
 										</h:panelGroup>
@@ -314,7 +320,7 @@
 									<h:outputText value="#{msgs.event_canceled}" escape="false" styleClass="organizer_canceled"/>
 								</h:panelGroup>
 								<h:panelGroup rendered="#{!timeSlotWrapper.timeSlot.canceled}">
-									<h:panelGrid columns="1" styleClass="organizerAction">
+									<h:panelGrid columns="1" styleClass="organizerAction" columnClasses="noWrapCol">
 						   				<h:dataTable id="availableSpots" value="#{timeSlotWrapper.attendeeWrappers}" var="attendeeWrapper">
 						   					<h:column>
 						   						<h:panelGrid columns="2" columnClasses="editAddImages,attName"  rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" id="editLink">

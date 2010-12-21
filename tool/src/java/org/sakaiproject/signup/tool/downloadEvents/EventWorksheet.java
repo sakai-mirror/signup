@@ -786,8 +786,10 @@ public class EventWorksheet implements MeetingTypes, SignupBeanConstants {
 
 		sb.append("  -  ");
 		sb.append(getTime(ts.getEndTime()).toStringLocalTime());
-		if (isCrossDay)
+		if (isCrossDay){
 			sb.append(", " + getShortWeekDayName(ts.getEndTime()));
+			sb.append(", " + getTime(ts.getEndTime()).toStringLocalShortDate());
+		}
 
 		return sb.toString();
 	}

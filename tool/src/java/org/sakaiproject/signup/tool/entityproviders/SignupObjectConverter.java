@@ -55,7 +55,7 @@ public class SignupObjectConverter {
 	private static final int MAX_COMMENT_DISPLAY_LENGTH = 300;
 
 	public static SignupEvent convertToSignupEventObj(SignupMeeting sm, String userId, String currentSiteId,
-			boolean isDeepCopy, SakaiFacade sakaiFacade) {
+			boolean isDeepCopy, boolean isMySignUp, SakaiFacade sakaiFacade) {
 		if (sm == null) {
 			return null;
 		}
@@ -73,10 +73,18 @@ public class SignupObjectConverter {
 		se.setMeetingType(sm.getMeetingType());
 		se.setRecurrenceId(sm.getRecurrenceId());
 		se.setRepeatType(sm.getRepeatType());
-		se.setPermission(new Permission(sm.getPermission().isAttend(), sm.getPermission().isUpdate(), sm
-				.getPermission().isDelete()));
-		se.setSiteId(currentSiteId);// keep tracking siteId
-		se.setAvailableStatus(Utilities.retrieveAvailStatus(sm, userId, sakaiFacade));
+		
+		/*my signup need no permission part*/
+		if(isMySignUp){
+			se.setAvailableStatus(Utilities.rb.getString("event.youSignedUp"));
+		}
+		else{
+			se.setPermission(new Permission(sm.getPermission().isAttend(), sm.getPermission().isUpdate(), sm
+					.getPermission().isDelete()));
+			se.setAvailableStatus(Utilities.retrieveAvailStatus(sm, userId, sakaiFacade));
+		}
+		
+		se.setSiteId(currentSiteId);// keep tracking siteId		
 		se.setSignupSiteItems(null);
 		se.setAllowWaitList(sm.isAllowWaitList());
 		se.setAllowComment(sm.isAllowComment());
@@ -168,7 +176,7 @@ public class SignupObjectConverter {
 				if (comment != null && comment.length() > MAX_COMMENT_DISPLAY_LENGTH)
 					comment = comment.subSequence(0, MAX_COMMENT_DISPLAY_LENGTH) + ".....";
 				sp.setComments(comment);
-				if (showAttendeeName) {
+				if (showAttendeeName || isOrganizer) {
 					sp.setDisplayName(sakaiFacade.getUserDisplayName(one.getAttendeeUserId()));
 				}
 

@@ -118,7 +118,37 @@ public class NewMeetingEmail extends SignupEmailBase {
 			message.append(MessageFormat.format(rb.getString("body.recurrence.meeting.status"), paramsRecur));
 		}
 
-		if (meeting.getMeetingType().equals(INDIVIDUAL)) {
+		if(meeting.getMeetingType().equals(CUSTOM_TIMESLOTS)){
+			List<SignupTimeslot> tsList = meeting.getSignupTimeSlots();
+			message.append(newline +newline + rb.getString("body.meeting.timeslot.detail.title"));
+			if(tsList !=null){
+				int i = 1;
+				for (SignupTimeslot ts : tsList) {
+					if (!meeting.isMeetingCrossDays()){
+						Object[] oneTsDateParam = new Object[] {
+								getTime(ts.getStartTime()).toStringLocalTime(),
+								getTime(ts.getEndTime()).toStringLocalTime()};
+						message.append(newline + newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot"), new Object[]{i}) );
+						message.append(newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot.timeframe"), oneTsDateParam) );
+						message.append(newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot.max.participants"), new Object[]{ts.getMaxNoOfAttendees()}) );
+						//message.append(newline);
+						i++;
+					}
+					else{
+						Object[] oneTsDateParam = new Object[] {
+								getTime(ts.getStartTime()).toStringLocalTime(),
+								getTime(ts.getStartTime()).toStringLocalShortDate(),
+								getTime(ts.getEndTime()).toStringLocalTime(),
+								getTime(ts.getEndTime()).toStringLocalShortDate()};
+						message.append(newline + newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot"), new Object[]{i}) );
+						message.append(newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot.timeframe.crossdays"), oneTsDateParam) );
+						message.append(newline + MessageFormat.format(rb.getString("body.attendee.custom.defined.meeting.timeslot.max.participants"), new Object[]{ts.getMaxNoOfAttendees()}) );
+						//message.append(newline);
+						i++;
+					}
+				}
+			}			
+		}else if (meeting.getMeetingType().equals(INDIVIDUAL)) {
 			Object[] params2 = new Object[] { meeting.getNoOfTimeSlots(), getTimeSlotLength(meeting),
 					meeting.getMaxNumberOfAttendees() };
 			message.append(newline + newline

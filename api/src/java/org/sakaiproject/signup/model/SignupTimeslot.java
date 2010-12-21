@@ -32,7 +32,7 @@ import java.util.List;
  * directly to the DB storage by Hibernate
  * </p>
  */
-public class SignupTimeslot {
+public class SignupTimeslot implements Comparable{
 
 	private Long id;
 
@@ -298,6 +298,14 @@ public class SignupTimeslot {
 	 */
 	public boolean isUnlimitedAttendee() {
 		return (maxNoOfAttendees == UNLIMITED);
+	}
+	
+	public int compareTo(Object o) throws ClassCastException{
+		if(!(o instanceof SignupTimeslot))
+			throw new ClassCastException("SignupTimeslot object expected.");
+
+		int result = this.getStartTime().compareTo(((SignupTimeslot)o).getStartTime());
+		return result;
 	}
 
 }
