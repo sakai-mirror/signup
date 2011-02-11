@@ -34,6 +34,7 @@ import javax.faces.component.html.HtmlInputHidden;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
+import javax.faces.context.FacesContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -286,6 +287,38 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		/*clean up everything in getUserDefineTimeslotBean*/
 		getUserDefineTimeslotBean().reset(UserDefineTimeslotBean.NEW_MEETING);
 	}
+	
+ 	/**
+ 	 * This method is called to get all locations during the new signup creation.
+ 	 * 
+ 	 * @return list of allLocations
+ 	 */
+ 	public List<SelectItem> getAllLocations(){
+ 		
+ 		SignupMeetingsBean allMeetings = (SignupMeetingsBean) FacesContext.getCurrentInstance()
+ 		.getExternalContext().getSessionMap().get("SignupMeetingsBean");
+ 		
+ 		return allMeetings.getAllLocations();
+ 	}
+ 	
+ 	/**
+	 * This is a ValueChange Listener to watch the view-range type selection by
+	 * user.
+	 * 
+	 * @param vce
+	 *            a ValuechangeEvent object.
+	 * @return a outcome string.
+	 */
+	public String processLocation(ValueChangeEvent vce) {
+		String location = (String) vce.getNewValue();
+		
+		getSignupMeeting().setLocation(location);
+
+		return MAIN_EVENTS_LIST_PAGE_URL;
+
+	}
+ 	
+ 	
 
 	/**
 	 * This is a JSF action call method by UI to navigate to the next page.

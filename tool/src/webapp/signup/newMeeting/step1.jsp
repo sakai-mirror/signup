@@ -54,6 +54,10 @@
 		                            <f:validateLength maximum="255" />
 		                        </h:inputText>
 		                        <h:message for="location" errorClass="alertMessageInline"/>
+		                        <!-- Displays all the locations in the dropdown -->
+		                        <h:selectOneMenu id="location2" value="#{NewSignupMeetingBean.signupMeeting.location}" valueChangeListener="#{NewSignupMeetingBean.processLocation}">
+									<f:selectItems value="#{NewSignupMeetingBean.allLocations}"/>
+								</h:selectOneMenu>
 		                    </h:panelGroup>                           
 		                
 		                    <h:outputText value="#{msgs.event_description}" styleClass="titleText"  escape="false"/>
