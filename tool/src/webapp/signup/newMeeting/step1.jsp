@@ -50,9 +50,10 @@
 		                    </h:panelGroup>                                                   
 		                    <h:panelGroup>
 		                    	  <!-- Displays all the locations in the dropdown -->
-		                        <h:selectOneMenu id="selectedLocation" value="#{NewSignupMeetingBean.selectedLocation}">
+		                        <h:selectOneMenu id="selectedLocation" value="#{NewSignupMeetingBean.selectedLocation}" rendered="#{!NewSignupMeetingBean.allLocationsEmpty}">
 									<f:selectItems value="#{NewSignupMeetingBean.allLocations}"/>
 								</h:selectOneMenu>
+								<h:outputLabel id="customLocationLabel" for="customLocation" value="#{msgs.tab_event_location_custom}" rendered="#{!NewSignupMeetingBean.allLocationsEmpty}" /><h:outputText value="&nbsp;" escape="false" />
 		                        <h:inputText id="customLocation" size="40" value="#{NewSignupMeetingBean.customLocation}" styleClass="editText">  
 		                            <f:validator validatorId="Signup.EmptyStringValidator"/>
 		                            <f:validateLength maximum="255" />

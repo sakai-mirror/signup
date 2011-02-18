@@ -318,9 +318,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
  	public List<SelectItem> getAllLocations(){
  		
  		List<SelectItem> locations= new ArrayList<SelectItem>();
- 		SignupMeetingsBean allMeetings = (SignupMeetingsBean) FacesContext.getCurrentInstance()
- 		.getExternalContext().getSessionMap().get("SignupMeetingsBean");
- 		locations.addAll(allMeetings.getAllLocations());
+ 		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
  		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
  		return locations;
  	}
@@ -1740,6 +1738,13 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	
 	public boolean isAttachmentsEmpty(){
 		if (this.attachments !=null && this.attachments.size()>0)
+			return false;
+		else
+			return true;
+	}
+	
+	public boolean isAllLocationsEmpty(){
+		if (Utilities.getSignupMeetingsBean().isMeetingsAvailable())
 			return false;
 		else
 			return true;
