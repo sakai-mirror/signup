@@ -18,7 +18,7 @@
 				
 			<h:form id="meeting">
 			 	<sakai:view_title value="#{msgs.event_modify_meeting_page_title}"/>
-			 	<sakai:doc_section> 
+			 	<sakai:doc_section>
 					<h:panelGrid columns="1" styleClass="instruction">						
 						<h:panelGroup>
 							<h:outputText value="#{msgs.star_character}" styleClass="reqStarInline" />
@@ -58,15 +58,25 @@
 								<h:outputText value="#{msgs.star_character}" style="color:#B11;"/>
 								<h:outputText value="#{msgs.event_location}"  escape="false"/>
 							</h:panelGroup>
-							<h:panelGroup>
-								<h:inputText id="location" value="#{EditMeetingSignupMBean.signupMeeting.location}" required="true" size="40" styleClass="editText">
-									<f:validator validatorId="Signup.EmptyStringValidator"/>
-									<f:validateLength maximum="255" />
-								</h:inputText>														
-								<h:message for="location" errorClass="alertMessageInline"/>
-							</h:panelGroup>
-							
-							<h:outputText value="#{msgs.event_description}" styleClass="titleText" escape="false"/>
+						<h:panelGroup>
+							<!-- Displays all the locations in the dropdown -->
+							<h:selectOneMenu id="selectedLocation"
+								value="#{EditMeetingSignupMBean.selectedLocation}">
+								<f:selectItems value="#{EditMeetingSignupMBean.allLocations}" />
+							</h:selectOneMenu>
+							<h:outputLabel id="customLocationLabel" for="customLocation"
+								value="#{msgs.tab_event_edit_location_custom}" />
+							<h:outputText value="&nbsp;" escape="false" />
+							<h:inputText id="customLocation" size="40"
+								value="#{EditMeetingSignupMBean.signupMeeting.location}"
+								styleClass="editText">
+								<f:validator validatorId="Signup.EmptyStringValidator" />
+								<f:validateLength maximum="255" />
+							</h:inputText>
+							<h:message for="location" errorClass="alertMessageInline" />
+						</h:panelGroup>
+
+						<h:outputText value="#{msgs.event_description}" styleClass="titleText" escape="false"/>
 							<sakai:rich_text_area value="#{EditMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5"  columns="80"/>
 							
 							<h:outputText  value="" styleClass="titleText" escape="false" />

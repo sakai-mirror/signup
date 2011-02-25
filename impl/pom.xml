@@ -69,17 +69,6 @@
 		</dependency>
 
 		<!-- Various Sakai dependencies -->
-		
-<!--org.sakaiprojectsakai-site-api${sakai.version}-->
-<!--org.sakaiprojectsakai-user-api${sakai.version}-->
-<!--org.sakaiprojectsakai-util-api${sakai.version}-->
-<!--org.sakaiprojectsakai-component-api${sakai.version}-->
-<!--org.sakaiprojectsakai-tool-api${sakai.version}-->
-<!--org.sakaiprojectsakai-entity-api${sakai.version}-->
-<!--org.sakaiprojectsakai-util${sakai.version}-->
-<!--org.sakaiprojectsakai-email-api${sakai.version}-->
-<!--org.sakaiprojectsakai-authz-api${sakai.version}-->
-
 		<dependency>
 			<groupId>org.sakaiproject</groupId>
 			<artifactId>sakai-calendar-api</artifactId>

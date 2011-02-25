@@ -98,15 +98,6 @@
 			<version>${sakai.servletapi.version}</version>
 		</dependency>
 
-<!--org.sakaiprojectsakai-site-api${sakai.version}-->
-<!--org.sakaiprojectsakai-user-api${sakai.version}-->
-<!--org.sakaiprojectsakai-util-api${sakai.version}-->
-<!--org.sakaiprojectsakai-tool-api${sakai.version}-->
-<!--org.sakaiprojectsakai-entity-api${sakai.version}-->
-<!--org.sakaiprojectsakai-entity-util${sakai.version}-->
-<!--org.sakaiprojectsakai-util${sakai.version}-->
-<!--org.sakaiprojectsakai-event-api${sakai.version}-->
-
 		<!-- Sakai JSF dependencies -->
 		<dependency>
             <groupId>org.sakaiproject.jsf</groupId>
@@ -206,4 +197,3 @@
 
 	</dependencies>
 </project>
-
