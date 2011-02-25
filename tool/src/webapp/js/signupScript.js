@@ -469,7 +469,73 @@
 	}
 			
 
+var sakai = sakai ||
+{};
 
+/*
+ a list with checkboxes, selecting/unselecting checkbox applies/removes class from row,
+ selecting top checkbox selelects/unselects all, top checkbox is hidden if there are no
+ selectable items, onload, rows with selected checkboxes are highlighted with class
+ args: id of table, id of select all checkbox, highlight row class
+ */
+sakai.setupSelectList = function(list, allcontrol, highlightClass){
+    $('#' + list + ' :checked').parent("td").parent("tr").addClass(highlightClass);
+    
+    if ($('#' + list + ' td :checkbox').length === 0) {
+        $('#' + allcontrol).hide();
+    }
+    $('#' + allcontrol).click(function(){
+        if (this.checked) {
+            $('#' + list + ' :checkbox').attr('checked', 'checked');
+            $('#' + list + ' :checkbox').parent('td').parent('tr').addClass(highlightClass);
+        }
+        else {
+            $('#' + list + ' :checkbox').attr('checked', '');
+            $('#' + list + ' tbody tr').removeClass(highlightClass);
+        }
+    });
+    
+    $('#' + list + ' :checkbox').click(function(){
+        var someChecked = false;
+        if (this.checked) {
+            $(this).parents('tr').addClass(highlightClass);
+        }
+        else {
+            $(this).parents('tr').removeClass(highlightClass);
+        }
+        $('#' + list + ' :checkbox').each(function(){
+            if (this.checked) {
+                someChecked = true;
+            }
+        });
+        if (!someChecked) {
+            $('#' + allcontrol).attr('checked', '');
+        }
+        if ($('#' + list + ' :checked').length !== $('#' + list + ' :checkbox').length) {
+            $('#' + allcontrol).attr('checked', '');
+        }
+        
+        if ($('#' + list + '  :checked').length === $('#' + list + '  :checkbox').length) {
+            $('#' + allcontrol).attr('checked', 'checked');
+        }
+    });
+};
 	
 
-	
+sakai.setupPrintPreview = function(){
+  if (window.name == 'printwindow') {
+    $('.portletBody').addClass('portletBodyPrint');
+    $("h3").append(' (<a href="javascript:window.print()">Print</a>)');
+    /*
+    manipulate checkboxes
+    */
+   $('#attendanceList :checkbox').each(function(){
+       if ($(this).attr('checked') ===true){
+           $(this).before('<span class="printCheckbox">X</span>')
+       }
+       else{
+           $(this).before('<span class="printCheckbox">&nbsp;&nbsp;</span>')
+       }
+   })
+  }
+}	
