@@ -18,6 +18,7 @@ create table signup_meetings (
   	allow_comment bit(1) default 1,
   	eid_input_mode bit(1) default '\0',
   	auto_reminder bit(1) default '\0', 
+  	allow_attendance bit(1) default '\0',
 	primary key (id)
 ) type=InnoDB;
 

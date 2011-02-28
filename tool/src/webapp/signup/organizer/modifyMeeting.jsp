@@ -184,7 +184,7 @@
 								<h:outputText value="Attendance" escape="false" styleClass="titleText"/>
 							  </h:panelGroup>
               <h:panelGroup>
-								<h:selectBooleanCheckbox id="attendanceSelection" value="someValue" />
+								<h:selectBooleanCheckbox id="attendanceSelection" value="#{EditMeetingSignupMBean.signupMeeting.allowAttendance}" />
 								<h:outputLabel value="Attendance will be taken" for="attendanceSelection" styleClass="titleText"/>
 								<h:outputText value=" (you can track attendance to this meeting if selected)" escape="false" styleClass="textPanelFooter"/>
 							  </h:panelGroup>

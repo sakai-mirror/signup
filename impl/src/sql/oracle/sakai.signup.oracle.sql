@@ -30,6 +30,7 @@ create table signup_meetings (
 	allow_comment   number(1,0)  default '1',
 	eid_input_mode  number(1,0)  default '0' NULL,
 	auto_reminder   number(1,0)  default '0' NULL,	
+	allow_attendance  number(1,0)  default '0' NULL,
 	primary key (id));
 	
 create table signup_site_groups (
