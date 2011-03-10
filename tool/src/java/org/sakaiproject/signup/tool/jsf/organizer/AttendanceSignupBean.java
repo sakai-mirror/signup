@@ -32,6 +32,16 @@ public class AttendanceSignupBean extends SignupUIBaseBean{
 
 	}
 	
+	/**
+	 * this resets information which contains in the meetings object that lived in a session
+	 * scope
+	 * 
+	 */
+	public void reset(){
+		this.meetingWrapper.setMeeting(this.signupMeetingService.loadSignupMeeting(meetingWrapper.getMeeting().getId(), sakaiFacade
+				.getCurrentUserId(), sakaiFacade.getCurrentLocationId()));
+	}
+	
 	public UIData getTimeslotWrapperTable() {
 		return timeslotWrapperTable;
 	}
@@ -48,6 +58,7 @@ public class AttendanceSignupBean extends SignupUIBaseBean{
 	public String doSave() {
 		try {
 			this.signupMeetingService.updateSignupMeeting(meetingWrapper.getMeeting(), true);
+			reset();
 		}
 		catch (Exception e) {
 			// TODO: handle exception
@@ -61,10 +72,9 @@ public class AttendanceSignupBean extends SignupUIBaseBean{
 	 * @return an action outcome string.
 	 */
 	public String doCancel() {
+		reset();
 		return MAIN_EVENTS_LIST_PAGE_URL;
 		
-	}
-	
-	
+	}	
 
 }
