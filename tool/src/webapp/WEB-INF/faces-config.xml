@@ -266,6 +266,10 @@
 			<property-name>signupMeetingService</property-name>
 			<value>#{org_sakaiproject_signup_logic_SignupMeetingService}</value>
 		</managed-property>
+		<managed-property>
+			<property-name>sakaiFacade</property-name>
+			<value>#{org_sakaiproject_signup_logic_SakaiFacade}</value>
+		</managed-property>
     </managed-bean>
     
     <managed-bean>

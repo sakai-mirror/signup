@@ -32,16 +32,6 @@ public class AttendanceSignupBean extends SignupUIBaseBean{
 
 	}
 	
-	/**
-	 * This is a setter.
-	 * 
-	 * @param meetingWrapper
-	 *            a SignupMeetingWrapper object.
-	 */
-	public void setMeetingWrapper(SignupMeetingWrapper meetingWrapper) {
-		this.meetingWrapper = meetingWrapper;
-	}
-	
 	public UIData getTimeslotWrapperTable() {
 		return timeslotWrapperTable;
 	}
