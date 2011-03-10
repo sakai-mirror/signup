@@ -101,7 +101,7 @@
 								var="attendeeWrapper">
 								<h:column>
 									<h:panelGroup>
-										<h:selectBooleanCheckbox value="true" />
+										<h:selectBooleanCheckbox value="#{attendeeWrapper.attended}" />
 										<h:outputText value="#{attendeeWrapper.displayName}"
 											rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}" />
 									</h:panelGroup>

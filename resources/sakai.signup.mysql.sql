@@ -90,6 +90,7 @@ create table signup_ts_waitinglist (
 	calendar_event_id varchar(255), 
 	calendar_id varchar(255), 
 	list_index integer not null, 
+  	attended bit(1) default '\0',
 	primary key (timeslot_id, list_index)
 ) type=InnoDB;
 

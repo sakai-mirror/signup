@@ -46,16 +46,23 @@ public class AttendanceSignupBean extends SignupUIBaseBean{
 	 * @return an action outcome string.
 	 */
 	public String doSave() {
-		return ATTENDEE_MEETING_PAGE_URL;
+		try {
+			this.signupMeetingService.updateSignupMeeting(meetingWrapper.getMeeting(), true);
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
+		return MAIN_EVENTS_LIST_PAGE_URL;
 	}
-	
+
 	/**
 	 * This is a JSF action call method by UI to cancel the attendance changes
 	 * 
 	 * @return an action outcome string.
 	 */
 	public String doCancel() {
-		return ATTENDEE_MEETING_PAGE_URL;
+		return MAIN_EVENTS_LIST_PAGE_URL;
+		
 	}
 	
 	
