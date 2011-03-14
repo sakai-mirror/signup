@@ -478,45 +478,26 @@ var sakai = sakai ||
  selectable items, onload, rows with selected checkboxes are highlighted with class
  args: id of table, id of select all checkbox, highlight row class
  */
-sakai.setupSelectList = function(list, allcontrol, highlightClass){
-    $('#' + list + ' :checked').parent("td").parent("tr").addClass(highlightClass);
+sakai.setupSelectListMultiple = function(list, allcontrol, highlightClass){
+    $('.' + list + ' :checked').parent("td").parent("tr").addClass(highlightClass);
     
-    if ($('#' + list + ' td :checkbox').length === 0) {
-        $('#' + allcontrol).hide();
-    }
-    $('#' + allcontrol).click(function(){
+    $('.' + allcontrol).click(function(){
         if (this.checked) {
-            $('#' + list + ' :checkbox').attr('checked', 'checked');
-            $('#' + list + ' :checkbox').parent('td').parent('tr').addClass(highlightClass);
+            $(this).parents('table.availableSpots').children('tbody').find('input').attr('checked',true);
+            $(this).parents('table.availableSpots').children('tbody').find('tr').addClass(highlightClass);
         }
         else {
-            $('#' + list + ' :checkbox').attr('checked', '');
-            $('#' + list + ' tbody tr').removeClass(highlightClass);
+            $(this).parents('label').parents('table.availableSpots').children('tbody').find('input').attr('checked',false);
+            $(this).parents('table.availableSpots').children('tbody').find('tr').removeClass(highlightClass);
         }
     });
     
-    $('#' + list + ' :checkbox').click(function(){
-        var someChecked = false;
+    $('.' + list + ' :checkbox').click(function(){
         if (this.checked) {
-            $(this).parents('tr').addClass(highlightClass);
+            $(this).parent('td').parent('tr').addClass(highlightClass);
         }
         else {
-            $(this).parents('tr').removeClass(highlightClass);
-        }
-        $('#' + list + ' :checkbox').each(function(){
-            if (this.checked) {
-                someChecked = true;
-            }
-        });
-        if (!someChecked) {
-            $('#' + allcontrol).attr('checked', '');
-        }
-        if ($('#' + list + ' :checked').length !== $('#' + list + ' :checkbox').length) {
-            $('#' + allcontrol).attr('checked', '');
-        }
-        
-        if ($('#' + list + '  :checked').length === $('#' + list + '  :checkbox').length) {
-            $('#' + allcontrol).attr('checked', 'checked');
+            $(this).parent('td').parent('tr').removeClass(highlightClass);
         }
     });
 };

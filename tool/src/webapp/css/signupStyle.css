@@ -1,3 +1,15 @@
+@media print  {
+.portletBody .navIntraTool, .portletBody #attendanceList thead, .noPrint, .portletBodyPrint input{
+    display:none !important;
+}    
+h4{
+    width :100% !important
+}
+.selectedSelected{
+    font-weight:bold !important;    
+    background:#ccc !important
+}
+}    
 table.signupTable {
 	text-align: left;
 }
@@ -496,10 +508,6 @@ table.emailTable td.valueColumn {
 	margin-left:-5px;
 }
 
-
-.portletBodyPrint .printCheckbox{
-    display:inline;border:1px solid #777;width:1em;font-size:1em;padding:0 4px;font-weight:bold;
+.subListHeader{
+    background:#eee !important;
 }
-.portletBodyPrint .navIntraTool, .portletBodyPrint #attendanceList thead, .portletBodyPrint .noPrint, .portletBodyPrint input{
-    display:none !important;
-}    
