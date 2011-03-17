@@ -41,6 +41,10 @@
 					<h:outputText value="#{msgs.event_attendee_name}" styleClass="titleText" escape="false"/>
 					<h:outputText value="#{ViewCommentSignupMBean.attendeeWraper.displayName}" styleClass="longtext" escape="false"/>
 					
+					<h:outputText value="#{msgs.event_attendee_email}" styleClass="titleText" escape="false"/>
+					<h:outputText value="#{ViewCommentSignupMBean.attendeeEmail}" styleClass="longtext" escape="false" rendered="#{ViewCommentSignupMBean.attendeeEmail !=null}"/>
+					<h:outputText value="#{msgs.event_attendee_noEmail}" styleClass="longtext" escape="false" rendered="#{ViewCommentSignupMBean.attendeeEmail ==null}"/>
+					
 					<h:outputText value="#{msgs.event_attendee_role}" styleClass="titleText" escape="false"/>
 					<h:outputText value="#{ViewCommentSignupMBean.attendeeRole}" styleClass="longtext" escape="false"/>
 					
