@@ -342,6 +342,9 @@
 							   								<h:outputText value="#{attendeeWrapper.displayName}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}"/>
 							   								<h:graphicImage title="Click to view comment" value="/images/comment.gif" width="11" height="11" alt="view comment" style="border:none" styleClass="openCloseImageIcon" rendered="#{attendeeWrapper.comment}" />
 							   							</h:commandLink>
+							   							<h:outputText value="#{attendeeWrapper.attendeeEmail}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.attendeeEmail !=null}"/>
+							   							<h:outputText value="#{msgs.event_attendee_noEmail}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.attendeeEmail ==null}"/>
+							   								
 							   						</h:panelGroup>
 						   						</h:panelGrid>
 						   						
@@ -455,6 +458,9 @@
 									   							<f:param id="waiterUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{waiterWrapper.signupAttendee.attendeeUserId}"/>
 									   							<h:outputText value="&nbsp;" escape="false" />
 									   						</h:commandLink>
+									   						<h:outputText value="#{waiterWrapper.attendeeEmail}"  rendered="#{waiterWrapper.attendeeEmail !=null}"/>
+							   								<h:outputText value="#{msgs.event_attendee_noEmail}"  rendered="#{waiterWrapper.attendeeEmail ==null}"/>
+							   							
 									   						<h:panelGroup>
 									   							<h:outputText value="#{waiterWrapper.displayName}" escape="false"/>
 									   						</h:panelGroup>				   					

@@ -26,10 +26,6 @@ import org.sakaiproject.signup.tool.jsf.AttendeeWrapper;
 import org.sakaiproject.signup.tool.jsf.SignupMeetingWrapper;
 import org.sakaiproject.signup.tool.jsf.SignupUIBaseBean;
 
-import org.sakaiproject.user.api.User;
-import org.sakaiproject.user.api.UserNotDefinedException;
-import org.sakaiproject.user.cover.UserDirectoryService;
-
 
 /**
  * <p>
@@ -43,8 +39,6 @@ public class ViewCommentSignupMBean extends SignupUIBaseBean {
 
 	private String AttendeeRole;
 	
-	private String attendeeEmail;
-
 	
 	/**
 	 * To initialize this UIBean, which lives in a session scope.
@@ -108,24 +102,4 @@ public class ViewCommentSignupMBean extends SignupUIBaseBean {
 	public SignupMeetingWrapper getMeetingWrapper() {
 		return meetingWrapper;
 	}
-	
-	/**
-	 * @return the attendeeEmail
-	 */
-	public String getAttendeeEmail() {
-		
-		try
-		{
-			String userId= attendeeWraper.getSignupAttendee().getAttendeeUserId();
-			User u = UserDirectoryService.getUser(userId);
-			attendeeEmail = u.getEmail();
-			if ((attendeeEmail != null) && (attendeeEmail.trim().length()) == 0) attendeeEmail = null;			
-		}
-		catch (UserNotDefinedException e)
-		{
-			attendeeEmail=null;
-		}
-		return attendeeEmail;
-	}
-
 }
