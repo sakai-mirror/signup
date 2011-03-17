@@ -29,7 +29,7 @@
 			</sakai:tool_bar>
 		</h:form>
 		<sakai:view_content>
-			
+
 			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/>      			
 				
 			<h:form id="meeting">
@@ -342,8 +342,17 @@
 							   								<h:outputText value="#{attendeeWrapper.displayName}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}"/>
 							   								<h:graphicImage title="Click to view comment" value="/images/comment.gif" width="11" height="11" alt="view comment" style="border:none" styleClass="openCloseImageIcon" rendered="#{attendeeWrapper.comment}" />
 							   							</h:commandLink>
-							   							<h:outputText value="#{attendeeWrapper.attendeeEmail}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.attendeeEmail !=null}"/>
-							   							<h:outputText value="#{msgs.event_attendee_noEmail}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.attendeeEmail ==null}"/>
+															<%--creating mailtos--%>
+
+															<h:panelGroup rendered="#{attendeeWrapper.attendeeEmail !=null}">
+							   								<h:outputText escape="false" value="&nbsp;(<a href='mailto:" />
+																	<h:outputText value="#{attendeeWrapper.attendeeEmail}?subject=" />
+																	<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.title}" />
+																	<h:outputText escape="false" value="' >" />
+																	<h:outputText value="#{attendeeWrapper.attendeeEmail}" />
+																<h:outputText escape="false" value="</a>)" />
+															</h:panelGroup>
+							   							<h:outputText value=" #{msgs.event_attendee_noEmail}" rendered="#{attendeeWrapper.attendeeEmail ==null}"/>
 							   								
 							   						</h:panelGroup>
 						   						</h:panelGrid>
@@ -452,18 +461,27 @@
 										<h:panelGrid columns="1" rendered="#{!timeSlotWrapper.timeSlot.unlimitedAttendee}" styleClass="organizerAction">
 									   			<h:dataTable id="waiterSpots" value="#{timeSlotWrapper.waitingList}" binding="#{OrganizerSignupMBean.waiterWrapperTable}" var="waiterWrapper">
 									   				<h:column>
-									   					<h:panelGrid columns="2" columnClasses="editAddImages,attName" rendered="#{waiterWrapper.signupAttendee.attendeeUserId !=null}">
-									   						<h:commandLink id="removeWaitingList" action="#{OrganizerSignupMBean.removeAttendeeFromWList}" title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
+									   					<h:panelGrid columns="3" border="0" columnClasses="editAddImages,attName" rendered="#{waiterWrapper.signupAttendee.attendeeUserId !=null}">
+									   						<h:commandLink id="removeWaitingList" action="#{OrganizerSignupMBean.removeAttendeeFromWList}" title="#{msgs.event_tool_tips_delete}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}" style="text-decoration:none !important">
 									   							<h:graphicImage value="/images/delete.png"  alt="delete" style="border:none" styleClass="openCloseImageIcon"/>
 									   							<f:param id="waiterUserId" name="#{OrganizerSignupMBean.attendeeUserId}" value="#{waiterWrapper.signupAttendee.attendeeUserId}"/>
 									   							<h:outputText value="&nbsp;" escape="false" />
 									   						</h:commandLink>
-									   						<h:outputText value="#{waiterWrapper.attendeeEmail}"  rendered="#{waiterWrapper.attendeeEmail !=null}"/>
-							   								<h:outputText value="#{msgs.event_attendee_noEmail}"  rendered="#{waiterWrapper.attendeeEmail ==null}"/>
-							   							
 									   						<h:panelGroup>
 									   							<h:outputText value="#{waiterWrapper.displayName}" escape="false"/>
 									   						</h:panelGroup>				   					
+
+																
+																<h:panelGroup  rendered="#{waiterWrapper.attendeeEmail !=null}">
+								   								<h:outputText escape="false" value="&nbsp;(<a href='mailto:" />
+																		<h:outputText value="#{waiterWrapper.attendeeEmail}?subject=" />
+																		<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.title}" />
+																		<h:outputText escape="false" value="' >" />
+																		<h:outputText value="#{waiterWrapper.attendeeEmail}" />
+																	<h:outputText escape="false" value="</a>)" />
+																</h:panelGroup>
+							   								<h:outputText value="#{msgs.event_attendee_noEmail}"  rendered="#{waiterWrapper.attendeeEmail ==null}"/>
+							   							
 									   					</h:panelGrid>		  
 									   				</h:column>				   		
 									   			</h:dataTable>
