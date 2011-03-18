@@ -346,6 +346,7 @@
 																width="16" 
 																height="16" 
 																alt="#{msgs.event_attendee_noEmail}" 
+																title="#{msgs.event_attendee_noEmail}"
 																styleClass="openCloseImageIcon"
 																rendered="#{attendeeWrapper.attendeeEmail==null}"/>
 							   							<h:outputText value="&nbsp;" escape="false" />
