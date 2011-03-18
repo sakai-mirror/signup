@@ -483,7 +483,8 @@
 																<h:graphicImage 
 																	value="/images/email_error.png" 
 																	width="16" height="16" 
-																	alt="#{msgs.event_attendee_noEmail}" 
+																	alt="#{msgs.event_attendee_noEmail}"
+																	title="#{msgs.event_attendee_noEmail}" 
 																	styleClass="openCloseImageIcon"
 																	rendered="#{waiterWrapper.attendeeEmail ==null}"/>
 																	<h:outputText value="&nbsp;" escape="false"/>
