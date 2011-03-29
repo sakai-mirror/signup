@@ -14,10 +14,9 @@
         </style>
           
         <script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/signupScript.js"></script>
-        <script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/newMeetingStep1.js"></script>                 
+        <script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/newmeetingStep1.js"></script>                 
         <sakai:view_content>
      		<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/>
-
             <h:form id="meeting" >              
                  <sakai:view_title value="#{msgs.create_new_event} #{msgs.basic}"/>
                 <sakai:doc_section>
@@ -177,7 +176,15 @@
 		                        <h:outputText value="#{msgs.before_event_end}" escape="false" style="margin-left:18px"/>
 		                        <h:message for="signupDeadline" errorClass="alertMessageInline" />
 		                    </h:panelGroup>
-	                 
+	                  					 <h:panelGroup rendered="#{NewSignupMeetingBean.attendanceOn}">
+											<h:outputText value="Attendance" escape="false" styleClass="titleText" rendered="#{NewSignupMeetingBean.attendanceOn}"/>
+										  </h:panelGroup >
+	                  						 <h:panelGroup rendered="#{NewSignupMeetingBean.attendanceOn}">
+												<h:selectBooleanCheckbox id="attendanceSelection" value="#{NewSignupMeetingBean.signupMeeting.allowAttendance}" />
+	   										<h:outputLabel value="#{msgs.attend_taken}" for="attendanceSelection" styleClass="titleText"/>
+												<h:outputText value="#{msgs.attend_track_selected}" escape="false" styleClass="textPanelFooter"/>
+										  </h:panelGroup>
+												
                 			<%-- display site/groups --%>
 				            <h:panelGroup styleClass="titleText" style="margin-top:5px">
 				            	<h:outputText value="#{msgs.star_character}"  style="color:#B11;"/>
@@ -336,4 +343,3 @@
     </f:verbatim>
 </f:view>
 
-        

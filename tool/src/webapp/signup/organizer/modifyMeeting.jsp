@@ -176,6 +176,15 @@
 									</h:panelGroup>
 							</h:panelGrid>
 							
+							<h:panelGroup rendered="#{EditMeetingSignupMBean.attendanceOn}">
+								<h:outputText value="Attendance" escape="false" styleClass="titleText"/>
+							  </h:panelGroup>
+              				<h:panelGroup rendered="#{EditMeetingSignupMBean.attendanceOn}">
+								<h:selectBooleanCheckbox id="attendanceSelection" value="#{EditMeetingSignupMBean.signupMeeting.allowAttendance}" />
+								<h:outputLabel value="#{msgs.attend_taken}" for="attendanceSelection" styleClass="titleText"/>
+								<h:outputText value="#{msgs.attend_track_selected}" escape="false" styleClass="textPanelFooter"/>
+							  </h:panelGroup>
+              
 							<%-- handle meeting types --%>
 				           	<h:panelGroup styleClass="titleText">
 				           			<h:outputText value="#{msgs.star_character}"  style="color:#B11;"/>

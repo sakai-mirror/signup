@@ -44,7 +44,7 @@ public class AttendeeWrapper {
 	private int positionIndex = 0;
 
 	private String timeslotPeriod;
-
+	
 	private String attendeeEmail;
 
 	/**
@@ -148,4 +148,17 @@ public class AttendeeWrapper {
 		return attendeeEmail;
 	}
 
+	/**
+	 * @return the attended
+	 */
+	public boolean isAttended() {
+		return this.signupAttendee.isAttended();
+	}
+
+	/**
+	 * @param attended 
+	 */
+	public void setAttended(boolean attended) {
+		this.signupAttendee.setAttended(attended);
+	}
 }

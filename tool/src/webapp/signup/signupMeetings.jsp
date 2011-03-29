@@ -87,7 +87,7 @@
 		   	    				
 		   	    				<h:outputText value="&nbsp;" escape="false"/>
 		   	    			</h:panelGroup>
-							<h:commandLink id="cmdlink90" action="#{SignupMeetingsBean.processSignup}">
+									<h:commandLink id="cmdlink90" action="#{SignupMeetingsBean.processSignup}" >
 								<h:outputText value="#{wrapper.meeting.title}" />
 							</h:commandLink>							
 						</t:column>
@@ -176,7 +176,10 @@
 									<h:outputText value="#{msgs.tab_event_availability}" escape="false"/>
 								</t:commandSortHeader>
 							</f:facet>
-							<h:outputText value="#{wrapper.availableStatus}" style="#{wrapper.statusStyle}" escape="false"/>												
+							<h:outputText value="#{wrapper.availableStatus}" style="#{wrapper.statusStyle}" escape="false"/>
+							<h:panelGroup styleClass="itemAction" style="margin-left:2em" rendered="#{SignupMeetingsBean.allowedToUpdate && SignupMeetingsBean.attendanceOn}">
+							  	<h:commandLink id="attendanceView" action="#{SignupMeetingsBean.processSignupAttendance}" value="Attendance"  rendered="#{wrapper.meeting.allowAttendance}"/>  <%--rendered="if ((in progress OR completed) AND attendance is a selected option for meeting) --%>
+							</h:panelGroup>
 						</t:column>	
 						
 						<t:column rendered="#{SignupMeetingsBean.allowedToDelete}">
