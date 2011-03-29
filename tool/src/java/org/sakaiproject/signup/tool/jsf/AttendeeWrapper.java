@@ -25,6 +25,11 @@ package org.sakaiproject.signup.tool.jsf;
 import org.sakaiproject.signup.model.SignupAttendee;
 import org.sakaiproject.signup.util.PlainTextFormat;
 
+import org.sakaiproject.user.api.User;
+import org.sakaiproject.user.api.UserNotDefinedException;
+import org.sakaiproject.user.cover.UserDirectoryService;
+
+
 /**
  * <p>
  * This class is a wrapper class for SignupAttendee for UI purpose
@@ -39,6 +44,8 @@ public class AttendeeWrapper {
 	private int positionIndex = 0;
 
 	private String timeslotPeriod;
+
+	private String attendeeEmail;
 
 	/**
 	 * Constructor
@@ -121,4 +128,24 @@ public class AttendeeWrapper {
 		
 		return false;
 	}
+	
+	/**
+	 * @return the attendeeEmail
+	 */
+	public String getAttendeeEmail() {
+		
+		try
+		{
+			String userId= getSignupAttendee().getAttendeeUserId();
+			User u = UserDirectoryService.getUser(userId);
+			attendeeEmail = u.getEmail();
+			if ((attendeeEmail != null) && (attendeeEmail.trim().length()) == 0) attendeeEmail = null;			
+		}
+		catch (UserNotDefinedException e)
+		{
+			attendeeEmail=null;
+		}
+		return attendeeEmail;
+	}
+
 }
