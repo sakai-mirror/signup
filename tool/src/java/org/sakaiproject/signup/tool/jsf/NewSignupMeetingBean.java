@@ -140,7 +140,10 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	private static boolean DEFAULT_USERID_INPUT_MODE_OPTION_CHOICE = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.userId.inputMode.choiceOption.setting", "true")) ? true : false;
 	
 	private static boolean DEFAULT_EXPORT_TO_CALENDAR_TOOL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.export.to.calendar.setting", "true")) ? true : false;
-
+	
+	//fix layout issue for ckEditor
+	private boolean ckEditor = "ckeditor".equalsIgnoreCase(Utilities.getSignupConfigParamVal("wysiwyg.editor", "FCKeditor")) ? true : false;
+	
 	private boolean publishToCalendar = DEFAULT_EXPORT_TO_CALENDAR_TOOL;
 	
 	private boolean allowWaitList = DEFAULT_ALLOW_WAITLIST;
@@ -1818,5 +1821,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		}
 	}
 
+	public boolean getCkEditor() {
+		return ckEditor;
+	}
 			
 }

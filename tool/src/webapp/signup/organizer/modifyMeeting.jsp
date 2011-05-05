@@ -72,7 +72,10 @@
 		                    </h:panelGroup> 
 							
 							<h:outputText value="#{msgs.event_description}" styleClass="titleText" escape="false"/>
-							<sakai:rich_text_area value="#{EditMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5"  columns="80"/>
+							<h:panelGroup>
+								<sakai:rich_text_area value="#{EditMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5"  columns="80"/>
+								<h:outputText value="</td></tr></table>" escape="false" rendered="#{EditMeetingSignupMBean.ckEditor}"/>
+							</h:panelGroup>
 							
 							<h:outputText  value="" styleClass="titleText" escape="false" />
 		         			<h:panelGrid columns="1">
@@ -103,7 +106,7 @@
 							</h:panelGroup>	
 							<h:panelGroup styleClass="editText" rendered="#{!EditMeetingSignupMBean.customTsType}">
 		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.startTime}"
-		        							style="color:black;" popupCalendar="true" onfocus="showRescheduleWarning();" onkeyup="setEndtimeMonthDateYear();getSignupDuration();return false;"/>
+		        							style="color:black;" popupCalendar="false" onfocus="showRescheduleWarning();" onkeyup="setEndtimeMonthDateYear();getSignupDuration();return false;"/>
 										<h:message for="startTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
 							<h:panelGroup rendered="#{EditMeetingSignupMBean.customTsType}">
@@ -123,7 +126,7 @@
 								<h:outputText value="#{msgs.event_end_time}" escape="false"/>
 							</h:panelGroup>
 		        			<h:panelGroup styleClass="editText" rendered="#{!EditMeetingSignupMBean.customTsType}">
-		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.endTime}" style="color:black;" popupCalendar="true" 
+		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.endTime}" style="color:black;" popupCalendar="false" 
 		        						onfocus="showRescheduleWarning();" 	 onkeyup="getSignupDuration();return false;"/>
 										<h:message for="endTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>	

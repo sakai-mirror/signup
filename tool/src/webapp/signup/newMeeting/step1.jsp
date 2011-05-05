@@ -61,8 +61,11 @@
 		                    </h:panelGroup>                           
 		                
 		                    <h:outputText value="#{msgs.event_description}" styleClass="titleText"  escape="false"/>
-		                    <sakai:rich_text_area value="#{NewSignupMeetingBean.signupMeeting.description}"  width="720" height="180" rows="8" columns="80" />
-		       
+		                    <h:panelGroup>
+		                    	<sakai:rich_text_area value="#{NewSignupMeetingBean.signupMeeting.description}"  width="720" height="180" rows="8" columns="80" />
+		       					<h:outputText value="</td></tr></table>" escape="false" rendered="#{NewSignupMeetingBean.ckEditor}"/>
+		       				</h:panelGroup>
+		       				
 		         			<h:outputText value="" escape="false" />
 		         			<h:panelGrid columns="1">
 		         				<t:dataTable value="#{NewSignupMeetingBean.attachments}" var="attach" rendered="#{!NewSignupMeetingBean.attachmentsEmpty}">
@@ -89,7 +92,7 @@
 							</h:panelGroup>	
 		        			<h:panelGroup styleClass="editText">
 		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{NewSignupMeetingBean.signupMeeting.startTime}"
-		        							 style="color:black;" popupCalendar="true" onkeyup="setEndtimeMonthDateYear();getSignupDuration();return false;"/>
+		        							 style="color:black;" popupCalendar="false" onkeyup="setEndtimeMonthDateYear();getSignupDuration();return false;"/>
 										<h:message for="startTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
 							
@@ -98,7 +101,7 @@
 								<h:outputText value="#{msgs.event_end_time}" escape="false"/>
 							</h:panelGroup>
 		        			<h:panelGroup styleClass="editText">
-		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{NewSignupMeetingBean.signupMeeting.endTime}" style="color:black;" popupCalendar="true" 
+		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{NewSignupMeetingBean.signupMeeting.endTime}" style="color:black;" popupCalendar="false" 
 		        							onkeyup="getSignupDuration();return false;"/>
 										<h:message for="endTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
@@ -133,7 +136,7 @@
 					                		        </h:panelGroup>
 					                                <h:panelGroup id="endOfDate" style="margin-left:3px;">
 						                            	 <!-- t:inputCalendar id="ex" value=""  renderAsPopup="true" monthYearRowClass="" renderPopupButtonAsImage="true" dayCellClass=""   styleClass="untilCalendar"/ -->             					
-						                                <t:inputDate id="until" type="date"  value="#{NewSignupMeetingBean.repeatUntil}"  popupCalendar="true"   styleClass="untilCalendar"/>
+						                                <t:inputDate id="until" type="date"  value="#{NewSignupMeetingBean.repeatUntil}"  popupCalendar="false"   styleClass="untilCalendar"/>
 						                		        <h:message for="until" errorClass="alertMessageInline" style="margin-left:10px" /> 
 					                		        </h:panelGroup>
 				                		        </h:panelGrid>
