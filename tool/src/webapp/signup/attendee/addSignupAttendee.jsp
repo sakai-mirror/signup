@@ -61,7 +61,7 @@
 				  <h:outputText id="commentSetting_1" style="display:none" value="&nbsp;" escape="false"/>
 				  <h:panelGroup id="commentSetting_2" style="display:none">		   
 				  		<sakai:rich_text_area value="#{AttendeeSignupMBean.timeslotWrapper.newAttendee.comments}" height="200" rows="5"  columns="70"/>
-				  		<h:outputText value="</td></tr></table>" escape="false" rendered="#{AttendeeSignupMBean.ckEditor}"/>
+				  		<h:outputText value="</td></tr></table>" escape="false" />
 				  </h:panelGroup>	
 				</h:panelGrid>
 				
