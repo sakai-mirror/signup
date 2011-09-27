@@ -72,10 +72,7 @@
 		                    </h:panelGroup> 
 							
 							<h:outputText value="#{msgs.event_description}" styleClass="titleText" escape="false"/>
-							<h:panelGroup>
-								<sakai:rich_text_area value="#{EditMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5"  columns="80"/>
-								<h:outputText value="</td></tr></table>" escape="false" />
-							</h:panelGroup>
+							<sakai:rich_text_area value="#{EditMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5"  columns="80"/>
 							
 							<h:outputText  value="" styleClass="titleText" escape="false" />
 		         			<h:panelGrid columns="1">

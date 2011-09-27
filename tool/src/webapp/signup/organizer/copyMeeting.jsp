@@ -63,12 +63,8 @@
 		                    </h:panelGroup> 
 							
 							<h:outputText value="#{msgs.event_description}" styleClass="titleText" escape="false"/>
-							<h:panelGroup>
-								<sakai:rich_text_area value="#{CopyMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5" columns="80"/>
-								<!-- This is a temporary fix due to unbalanced tag from Sakai-JSF tool -->
-								<h:outputText value="</td></tr></table>" escape="false" />
-							</h:panelGroup>
-							
+							<sakai:rich_text_area value="#{CopyMeetingSignupMBean.signupMeeting.description}" width="720" height="200" rows="5" columns="80"/>
+
 							<h:outputText  value="" styleClass="titleText" escape="false" />
 		         			<h:panelGrid columns="1">
 		         				<t:dataTable value="#{CopyMeetingSignupMBean.signupMeeting.signupAttachments}" var="attach" rendered="#{!CopyMeetingSignupMBean.signupAttachmentEmpty}">
