@@ -141,8 +141,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	
 	private static boolean DEFAULT_EXPORT_TO_CALENDAR_TOOL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.export.to.calendar.setting", "true")) ? true : false;
 	
-	//fix layout issue for ckEditor
-	private boolean ckEditor = "ckeditor".equalsIgnoreCase(Utilities.getSignupConfigParamVal("wysiwyg.editor", "FCKeditor")) ? true : false;
+	//fix layout issue for ckEditor - it should be fixed now by using tomhawhk 1.1.10 version instead of 1.1.9
+	private boolean ckEditor = false;//"ckeditor".equalsIgnoreCase(Utilities.getSignupConfigParamVal("wysiwyg.editor", "FCKeditor")) ? true : false;
 	
 	private boolean publishToCalendar = DEFAULT_EXPORT_TO_CALENDAR_TOOL;
 	
