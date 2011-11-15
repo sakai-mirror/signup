@@ -514,6 +514,7 @@ public class CreateMeetings extends SignupAction implements MeetingTypes, Signup
 		copy.setAutoReminder(s.isAutoReminder());
 		copy.setEidInputMode(s.isEidInputMode());
 		copy.setAllowAttendance(s.isAllowAttendance());
+		copy.setMaxNumOfSlots(s.getMaxNumOfSlots());
 
 		return copy;
 

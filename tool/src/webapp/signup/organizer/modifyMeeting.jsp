@@ -344,6 +344,13 @@
 									<h:outputText value="#{msgs.event_yes_publish_to_calendar}" escape="false"/>
 							</h:panelGroup>
 							
+							<h:outputText id="otherSetting_11" style="display:none" value="#{msgs.event_allowed_slots }" styleClass="titleText" escape="false" />
+							<h:panelGroup id="otherSetting_12" style="display:none" styleClass="longtext">
+								<h:selectOneMenu value="#{ EditMeetingSignupMBean.signupMeeting.maxNumOfSlots}">  
+									 <f:selectItems  value="#{EditMeetingSignupMBean.slots}"   /> 
+								</h:selectOneMenu>
+								<h:outputText value="#{msgs.event_allowed_slots_comments}" escape="false"/>
+							</h:panelGroup>
 						</h:panelGrid>
 				</h:panelGrid>
 					
