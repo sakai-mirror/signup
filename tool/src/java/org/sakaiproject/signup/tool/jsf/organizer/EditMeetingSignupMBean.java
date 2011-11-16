@@ -116,7 +116,7 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 	
 	private boolean userDefinedTS=false;
 	
-	
+	List<SelectItem> slots;
 	
 	/**
 	 * This method will reset everything to orignal value and also initialize
@@ -184,7 +184,7 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		}
 			
 		getUserDefineTimeslotBean().init(this.signupMeeting, MODIFY_MEETING_PAGE_URL, this.customTimeSlotWrpList, UserDefineTimeslotBean.MODIFY_MEETING);
-
+		populateDropDown();		
 	}
 
 	/* get the relative time out */
@@ -226,6 +226,12 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		this.copyDisplaySignupBegins=this.signupBegins;
 		this.copyDisplaySignupBeginsType=this.signupBeginsType;
 
+	}
+	
+	
+	void populateDropDown(){
+		slots = new ArrayList<SelectItem>();
+		for (int i =1; i <= numberOfSlots;i++) slots.add(new SelectItem(i, i+""));
 	}
 	
 	boolean hasUserChangedSignupBeginTime(){
@@ -949,6 +955,14 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		else{
 			return false;
 		}
+	}
+
+	public List<SelectItem> getSlots() {
+		return slots;
+	}
+
+	public void setSlots(List<SelectItem> slots) {
+		this.slots = slots;
 	}
 
 }

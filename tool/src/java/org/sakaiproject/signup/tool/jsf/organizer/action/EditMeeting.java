@@ -110,7 +110,6 @@ public class EditMeeting extends SignupAction implements MeetingTypes {
 	private UserDefineTimeslotBean userDefineTimeslotBean;
 	
 	private List<SignupTimeslot> toBedeletedTSList = null;
-	
 	public EditMeeting(String userId, String siteId, SignupMeetingService signupMeetingService, AttachmentHandler attachmentHandler, boolean isOrganizer) {
 		super(userId, siteId, signupMeetingService, isOrganizer);
 		this.attachmentHandler = attachmentHandler;
@@ -246,7 +245,7 @@ public class EditMeeting extends SignupAction implements MeetingTypes {
 		newlyModifyMeeting.setAutoReminder(modifiedMeeting.isAutoReminder());
 		newlyModifyMeeting.setEidInputMode(modifiedMeeting.isEidInputMode());
 		newlyModifyMeeting.setAllowAttendance(modifiedMeeting.isAllowAttendance());
-		
+		newlyModifyMeeting.setMaxNumOfSlots(modifiedMeeting.getMaxNumOfSlots());
 		/*new attachments changes*/
 		if(this.currentAttachList !=null){
 			updateWithOrigalAttachments(newlyModifyMeeting, this.currentAttachList, recurNum);//what to do with recurrence
@@ -403,6 +402,7 @@ public class EditMeeting extends SignupAction implements MeetingTypes {
 						.getRecurrenceId() != null && originalMeetingCopy.getRecurrenceId().equals(
 						upTodateMeeting.getRecurrenceId())))
 				|| originalMeetingCopy.getNoOfTimeSlots() != upTodateMeeting.getNoOfTimeSlots()
+				|| originalMeetingCopy.getMaxNumOfSlots().intValue() != upTodateMeeting.getMaxNumOfSlots().intValue()
 				|| !((originalMeetingCopy.getDescription() == null && upTodateMeeting.getDescription() == null) || (originalMeetingCopy
 						.getDescription() != null && upTodateMeeting.getDescription() != null)
 						&& (originalMeetingCopy.getDescription().length() == upTodateMeeting.getDescription().length()))
