@@ -20,35 +20,46 @@
 		</h:form>
 
 		<sakai:view_content>
-			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/> 
+			<h:outputText value="#{msgs.event_error_alerts} #{messageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{messageUIBean.error}"/> 
 			<h:form id="items">
 			 	<sakai:view_title value="#{msgs.signup_tool}"/>
 
-				<sakai:messages />
 				<h:panelGrid columns="1">
 					<h:outputText value="#{msgs.events_organizer_instruction}"  rendered="#{SignupMeetingsBean.allowedToUpdate && SignupMeetingsBean.meetingsAvailable}" escape="false"/>
 					<h:outputText value="#{msgs.events_attendee_instruction}" rendered="#{!SignupMeetingsBean.allowedToUpdate && SignupMeetingsBean.meetingsAvailable}" escape="false"/>
 					<h:outputText value="&nbsp;" escape="false"/>
 				</h:panelGrid>
-				<h:panelGrid columns="2">
+				
+				
+				<h:panelGrid columns="3">
+					<!-- view range dropdown -->
 					<h:panelGroup>
 						<h:outputText value="#{msgs.events_dropdownbox_title}&nbsp;" escape="false"/>
 						<h:selectOneMenu id="viewByRange" value="#{SignupMeetingsBean.viewDateRang}" valueChangeListener="#{SignupMeetingsBean.processSelectedRange}" onchange="if(validateIEDisabledItem(this)){submit()};">
 							<f:selectItems value="#{SignupMeetingsBean.viewDropDownList}"/>
 						</h:selectOneMenu>
 					</h:panelGroup>
+					
+					<!-- filter by category dropdown -->
 					<h:panelGroup>
-						<h:panelGroup styleClass="expandAllRecurMeetings" rendered="#{SignupMeetingsBean.enableExpandOption && SignupMeetingsBean.meetingsAvailable}">
+						<h:panelGroup styleClass="padLeft"> 
+							<h:outputText value="#{msgs.filter_by_category}&nbsp;" escape="false"/>
+							<h:selectOneMenu id="viewByCategory" value="#{SignupMeetingsBean.categoryFilter}" valueChangeListener="#{SignupMeetingsBean.processSelectedCategory}" onchange="if(validateIEDisabledItem(this)){submit()};">
+								<f:selectItems value="#{SignupMeetingsBean.allCategoriesForFilter}"/>
+							</h:selectOneMenu>
+						</h:panelGroup>
+					</h:panelGroup>
+					
+					<!--  expand all recurring meetings -->
+					<h:panelGroup>
+						<h:panelGroup styleClass="padLeft" rendered="#{SignupMeetingsBean.enableExpandOption && SignupMeetingsBean.meetingsAvailable}">
 							<h:selectBooleanCheckbox value="#{SignupMeetingsBean.showAllRecurMeetings}" valueChangeListener="#{SignupMeetingsBean.processExpandAllRcurEvents}" onclick="submit();"/>
 							<h:outputText value="#{msgs.expand_all_recur_events}" escape="false"/>
 						</h:panelGroup>
 						<h:outputText value="&nbsp;" escape="false" rendered="#{!SignupMeetingsBean.enableExpandOption}"/>
 					</h:panelGroup>
-					
-					
-					<h:outputText value="&nbsp;" escape="false"/>
-					<h:outputText value="&nbsp;" escape="false"/>
 				</h:panelGrid>
+				
 				<h:panelGrid columns="1" styleClass="noMeetingsWarn" rendered="#{!SignupMeetingsBean.meetingsAvailable}" >
 					<h:panelGroup>
 						<h:outputText value="#{SignupMeetingsBean.meetingUnavailableMessages}" escape="false" rendered="#{SignupMeetingsBean.userLoggedInStatus}"/>
@@ -108,6 +119,16 @@
 								</t:commandSortHeader>
 							</f:facet>
 							<h:outputText value="#{wrapper.meeting.location}"/>												
+						</t:column>
+						
+						<%-- category --%>
+						<t:column sortable="true">
+							<f:facet name="header">
+								<t:commandSortHeader columnName="#{SignupMeetingsBean.signupSorter.categoryColumn}" immediate="true" arrow="true">
+									<h:outputText value="#{msgs.tab_event_category}" escape="false"/>
+								</t:commandSortHeader>
+							</f:facet>
+							<h:outputText value="#{wrapper.meeting.category}"/>												
 						</t:column>
 	
 						<t:column>
@@ -186,14 +207,14 @@
 							<f:facet name="header">
 								<h:outputText value="#{msgs.tab_event_remove}" escape="false"/>
 							</f:facet>
-							<h:selectBooleanCheckbox value="#{wrapper.selected}" rendered="#{wrapper.meeting.permission.delete}"/>
+							<h:selectBooleanCheckbox value="#{wrapper.selected}" rendered="#{wrapper.meeting.permission.delete}" onclick="determineDeleteMessage(this, #{wrapper.recurEventsSize >1});"/>							
 						</t:column>				
 						
 					</t:dataTable>
 					
 					<h:panelGrid columns="1">
 						<h:outputText value="&nbsp;" escape="false"/>
-						<h:commandButton id="removeMeetings" action="#{SignupMeetingsBean.removeMeetings}" value="#{msgs.event_removeButton}" onclick='return confirm("#{msgs.meeting_confirmation_to_remove}");' rendered="#{SignupMeetingsBean.allowedToDelete}"/>
+						<h:commandButton id="removeMeetings" action="#{SignupMeetingsBean.removeMeetings}" value="#{msgs.event_removeButton}" onclick='return confirm(getDeleteMessage());' rendered="#{SignupMeetingsBean.allowedToDelete}"/>
 					</h:panelGrid>
 				</h:panelGroup>
 			 </h:form>
@@ -311,6 +332,31 @@
 				}
 				
 				return false;
+			}
+			
+			/* Determines what delete message to use in the confirm box. 
+			 * If we are only deleting singles then you get the normal message, but if any of the selections are the first one in a recurring meeting
+			 * then the msg changes.
+			 */
+			var deleteMultipleCount = 0;
+			function determineDeleteMessage(elem, multiple) {
+				
+				if(multiple) {
+					if (elem.checked == true) {
+						deleteMultipleCount++;
+					} else {
+						deleteMultipleCount--;
+					}
+				}
+			}
+			
+			/* If we have selected one or more checkboxes that contain multiples to delete, then return the appropriate message */
+			function getDeleteMessage() {
+				
+				if(deleteMultipleCount > 0) {
+					return '<h:outputText value="#{msgs.meeting_confirmation_to_remove_multiple}" />';
+				}
+				return '<h:outputText value="#{msgs.meeting_confirmation_to_remove}" />';
 			}
 
 			

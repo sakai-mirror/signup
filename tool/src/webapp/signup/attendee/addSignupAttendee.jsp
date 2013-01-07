@@ -13,10 +13,9 @@
 		<script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/signupScript.js"></script>
 		
 		<sakai:view_content>
-			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/> 
+			<h:outputText value="#{msgs.event_error_alerts} #{messageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{messageUIBean.error}"/> 
 			<h:form id="meeting">
 			 	<sakai:view_title value="#{msgs.event_addSignup_attendee_page_title}"/>
-				<sakai:messages />
 
 				<h:panelGrid columns="2" columnClasses="titleColumn,valueColumn" style="margin-top:20px;">
 					<h:outputText value="#{msgs.event_name}" styleClass="titleText" escape="false"/>
@@ -61,7 +60,6 @@
 				  <h:outputText id="commentSetting_1" style="display:none" value="&nbsp;" escape="false"/>
 				  <h:panelGroup id="commentSetting_2" style="display:none">		   
 				  		<sakai:rich_text_area value="#{AttendeeSignupMBean.timeslotWrapper.newAttendee.comments}" height="200" rows="5"  columns="70"/>
-				  		<h:outputText value="</td></tr></table>" escape="false" />
 				  </h:panelGroup>	
 				</h:panelGrid>
 				

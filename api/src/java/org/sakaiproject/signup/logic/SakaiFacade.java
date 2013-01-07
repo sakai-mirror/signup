@@ -22,8 +22,10 @@
  **********************************************************************************/
 package org.sakaiproject.signup.logic;
 
+import java.util.Collection;
 import java.util.List;
 
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentHostingService;
@@ -32,6 +34,7 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupSite;
 import org.sakaiproject.site.api.Group;
+import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.time.api.TimeService;
 import org.sakaiproject.tool.api.ToolManager;
@@ -80,6 +83,14 @@ public interface SakaiFacade {
 	
 	public static final String REALM_ID_FOR_LOGIN_REQUIRED_ONLY =".auth";
 
+	public static final String GROUP_PREFIX = "SIGNUP_";
+	
+	// see https://jira.sakaiproject.org/browse/SAK-21403
+	//this is currently hardcode but could be moved later
+	public static final String GROUP_PROP_SITEINFO_VISIBLE = "group_prop_wsetup_created";
+	
+	public static final String GROUP_PROP_SIGNUP_IGNORE = "group_prop_signup_ignore";
+	
 	/**
 	 * check to see if the user is Admin
 	 * 
@@ -195,7 +206,40 @@ public interface SakaiFacade {
 	 * @return an User object
 	 */
 	public User getUser(String userId);
+	
+	/**
+	 * get the User object but do not log any messages.
+	 * 
+	 * @param userId
+	 *            a sakai internal user Id
+	 * @return an User object
+	 */
+	public User getUserQuietly(String userId);
+	
+	/**
+	 * Does this user exist in the system? This only logs at debug level if they don't exist.
+	 * @param userId
+	 * @return	true if exists, false if not
+	 */
+	public boolean checkForUser(String userId);
 
+	/**
+	 * get all coordinators, who have create meeting permission in the event/meeting
+	 * 
+	 * @param meeting
+	 *            a SignupMeeting object
+	 * @return a list of SignupMeeting objects
+	 */
+	public List<SignupUser> getAllPossbileCoordinators(SignupMeeting meeting);
+	
+	/**
+	 * test whether a user has permission to create a meeting in a meeting
+	 * @param meeting
+	 * @param userId
+	 * @return
+	 */
+	public boolean hasPermissionToCreate(SignupMeeting meeting, String userId);
+	
 	/**
 	 * get all users, who have joined in the event/meeting
 	 * 
@@ -204,6 +248,15 @@ public interface SakaiFacade {
 	 * @return a list of SignupMeeting objects
 	 */
 	public List<SignupUser> getAllUsers(SignupMeeting meeting);
+	
+	/**
+	 * get all users, who have permission to attend the meeting
+	 * 
+	 * @param meeting
+	 *            a SignupMeeting object
+	 * @return a list of SignupMeeting objects
+	 */
+	public List<SignupUser> getAllPossibleAttendees(SignupMeeting meeting);
 
 	/**
 	 * get Calendar for this specific siteId
@@ -299,5 +352,111 @@ public interface SakaiFacade {
 	 * 		a SignupUser object
 	 */
 	public SignupUser getSignupUser(SignupMeeting meeting, String userId);
+	
+	/**
+	 * Get a list of users in the current site that have the given permission
+	 * @param permission	the permission to check
+	 * @return a List of Users that match the criteria
+	 */
+	public List<User> getUsersWithPermission(String permission);
+	
+	/**
+	 * Find users by an email address. This may return multiples so logic is needed to deal with that.
+	 * @param email
+	 * @return	a list of user objects or an empty list if none.
+	 */
+	public List<User> getUsersByEmail(String email);
+	
+	/**
+	 * Get a user by email address. Only use this if you are certain that there is only one user that matches,
+	 * as it will only return the first user if there are multiples.
+	 * 
+	 * @param email
+	 * @return	a User or null if no match
+	 */
+	public User getUserByEmail(String email);
+	
+	/**
+	 * Find a user by their eid.
+	 * @param eid
+	 * @return a user object or null if not found
+	 */
+	public User getUserByEid(String eid);
+	
+	/**
+	 * Is csv export enabled? signup.csv.export.enabled=true/false
+	 * @return
+	 */
+	public boolean isCsvExportEnabled();
 
+    /**
+     * Allow calendar.revise.any for the current user
+     */ 
+    public SecurityAdvisor pushAllowCalendarEdit();
+
+    /**
+     * Standard privileged push for the current user
+     */ 
+    public SecurityAdvisor pushSecurityAdvisor();
+    
+    /**
+     * Pop the specified security advisor
+     */ 
+    public void popSecurityAdvisor(SecurityAdvisor advisor);
+		
+	/**
+	 * Create a group in the specified site with the given title and description and optionally, a list of user uuids to populate it.
+	 * The title will be prefixed with the constant GROUP_PREFIX
+	 * @param siteId		site to create this group in
+	 * @param title			group title
+	 * @param description	group description
+	 * @param userIds		list of users to populate the group with, optional. 
+	 * @return The groupId
+	 */
+	public String createGroup(String siteId, String title, String description, List<String> userUuids);
+	
+	/**
+	 * Add the users to the given group in the given site
+	 * @param userIds		Collection of users, could be a single user
+	 * @param siteId		id of the site
+	 * @param groupId		id of the group
+	 * @return	true if users added, false if not
+	 */
+	public boolean addUsersToGroup(Collection<String> userIds, String siteId, String groupId);
+	
+	/**
+	 * Remove the user from the given group in the given site
+	 * @param userId		uuid of the user
+	 * @param siteId		id of the site
+	 * @param groupId		id of the group
+	 * @return	true if user removed, false if not
+	 */
+	public boolean removeUserFromGroup(String userId, String siteId, String groupId);
+	
+	/**
+	 * Get the list of users in a group
+	 * @param siteId		id of the site
+	 * @param groupId		id of the group
+	 * @return list of uuids for users in the group
+	 */	
+	public List<String> getGroupMembers(String siteId, String groupId);
+	
+	/**
+	 * Check if a group with the given id exists
+	 * @param siteId		id of the site
+	 * @param groupId		id of the group
+	 * @return	true if group exists, false if not.
+	 */
+	public boolean checkForGroup(String siteId, String groupId);
+	
+	/**
+	 * Synchronize the group title if group title has not been modified directly via Site-Info tool
+	 * @param siteId		id of the site
+	 * @param groupId		id of the group
+	 * @param newTitle		new group title
+	 * @return
+	 */
+	public boolean synchonizeGroupTitle(String siteId, String groupId, String newTitle);
+	
+	
 }

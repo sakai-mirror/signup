@@ -27,11 +27,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
 
+import org.apache.commons.lang.StringUtils;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.signup.logic.SignupUser;
 import org.sakaiproject.signup.logic.SignupUserActionException;
@@ -80,6 +82,12 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 	
 	//Location selected from the dropdown
 	private String selectedLocation;
+	
+	//Category selected from the dropdown
+	private String selectedCategory;
+	
+	//from the dropdown
+	private String creatorUserId;
 
 	private Date repeatUntil;
 
@@ -122,6 +130,11 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 	private List<TimeslotWrapper> customTimeSlotWrpList;
 	
 	private boolean userDefinedTS=false;
+	
+	protected static boolean NEW_MEETING_SEND_EMAIL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal(
+			"signup.email.notification.mandatory.for.newMeeting", "true")) ? true : false;
+	
+	private boolean mandatorySendEmail = NEW_MEETING_SEND_EMAIL;
 
 	/**
 	 * this reset information which contains in this UIBean lived in a session
@@ -133,7 +146,13 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 		keepAttendees = false;
 		assignParicitpantsToAllRecurEvents = false;
 		sendEmail = DEFAULT_SEND_EMAIL;
-		sendEmailAttendeeOnly = false;
+		if(NEW_MEETING_SEND_EMAIL){
+			//mandatory send email out
+			sendEmail= true;
+		}
+		
+		//sendEmailAttendeeOnly = false;
+		sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;
 		publishToCalendar= DEFAULT_EXPORT_TO_CALENDAR_TOOL;
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(new Date());
@@ -172,6 +191,13 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			setNumberOfSlots(1);
 
 		}
+		
+		//populate location and cateogry data for new meeting
+		//since it's copymeeting, the dropdown selections should have it already there.
+		this.selectedLocation=this.signupMeeting.getLocation();
+		this.selectedCategory = this.signupMeeting.getCategory();
+		this.customLocation="";
+		this.customCategory="";
 
 		populateDataForBeginDeadline(this.signupMeeting);
 		
@@ -265,7 +291,7 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			}
 			
 			/*pass who are receiving emails*/
-			sMeeting.setEmailAttendeesOnly(getSendEmailAttendeeOnly());
+			sMeeting.setSendEmailToSelectedPeopleOnly(getSendEmailToSelectedPeopleOnly());
 			
 			CreateMeetings createMeeting = new CreateMeetings(sMeeting, sendEmail, keepAttendees
 					&& !assignParicitpantsToAllRecurEvents, keepAttendees && assignParicitpantsToAllRecurEvents,
@@ -287,7 +313,7 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			return "";
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 			return ORGANIZER_MEETING_PAGE_URL;
 		}
 		
@@ -379,8 +405,8 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 		}
 		
 		//Set Location		
-		if (this.signupMeeting.getLocation()==null || this.signupMeeting.getLocation().equals("")){
-			if (selectedLocation.equals(Utilities.rb.getString("select_location"))){
+		if (StringUtils.isBlank(getCustomLocation())){
+			if (StringUtils.isBlank(selectedLocation) || selectedLocation.equals(Utilities.rb.getString("select_location"))){
 				validationError = true;
 				Utilities.addErrorMessage(Utilities.rb.getString("event.location_not_assigned"));
 				return;
@@ -388,8 +414,30 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			this.signupMeeting.setLocation(selectedLocation);
 			
 		}
-		//clear the location fields
+		else{
+			this.signupMeeting.setLocation(getCustomLocation());
+		}
+		//clear the location fields???
 		this.selectedLocation="";
+		
+		//Set Category
+		//if textfield is blank, check the dropdown
+		if (StringUtils.isBlank(getCustomCategory())){
+			//if dropdown is not the default, then use its value
+			if(!StringUtils.equals(selectedCategory, Utilities.rb.getString("select_category"))) {
+					this.signupMeeting.setCategory(selectedCategory);
+			}
+		}
+		else{
+			this.signupMeeting.setCategory(getCustomCategory());
+		}
+		//clear the category fields???
+		this.selectedCategory="";
+		
+		//set the creator/organiser
+		this.signupMeeting.setCreatorUserId(creatorUserId);
+		this.creatorUserId="";
+
 	}
 	
 	/**
@@ -405,6 +453,7 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 		cleanUpUnusedAttachmentCopies(this.signupMeeting.getSignupAttachments());
 		getUserDefineTimeslotBean().reset(UserDefineTimeslotBean.COPY_MEETING);
 		this.selectedLocation=null; //Reset selected option
+		this.selectedCategory=null; //Reset selected option
 		return ORGANIZER_MEETING_PAGE_URL;
 	}
 
@@ -553,7 +602,7 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			meeting.setSignupTimeSlots(cpTimeslotList);// pass over
 
 			if (lockOrCanceledTimeslot)
-				Utilities.addMessage(Utilities.rb.getString("warning.some_timeslot_may_locked_canceled"));
+				Utilities.addErrorMessage(Utilities.rb.getString("warning.some_timeslot_may_locked_canceled"));
 		}
 
 		meeting.setEndTime(calendar.getTime());
@@ -563,6 +612,11 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 				getDeadlineTimeType());
 
 		// copySites(meeting);
+		
+		/*Remove the coordinates who are not in the meeting any more due to the site group changes
+		 * we are simplify and just copy over coordinators over and user can change it via modify meeting page*/
+		//TODO later we may add the coordinators ability in the copy page too and need ajax to the trick.
+		meeting.setCoordinatorIds(getValidatedMeetingCoordinators(meeting));
 
 	}
 	
@@ -577,6 +631,19 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
  		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
  		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
  		return locations;
+ 	}
+ 	
+ 	/**
+ 	 * This method is called to get all categories to populate the dropdown
+ 	 * 
+ 	 * @return list of categories
+ 	 */
+ 	public List<SelectItem> getAllCategories(){
+ 		
+ 		List<SelectItem> categories= new ArrayList<SelectItem>();
+ 		categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
+ 		categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		return categories;
  	}
 
 	/**
@@ -712,6 +779,25 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 	 */
 	public void setselectedLocation(String selectedLocation) {
 		this.selectedLocation = selectedLocation;
+	}
+	
+	
+	public String getselectedCategory() {
+		return selectedCategory;
+	}
+	public void setselectedCategory(String selectedCategory) {
+		this.selectedCategory = selectedCategory;
+	}
+	
+	public String getcreatorUserId() {
+		if(this.creatorUserId ==null){
+			//set current user as default meeting organizer if case people forget to select one
+			return sakaiFacade.getCurrentUserId();
+		}
+		return creatorUserId;
+	}
+	public void setcreatorUserId(String creatorUserId) {
+		this.creatorUserId=creatorUserId;
 	}
 
 	/**
@@ -881,6 +967,40 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 				screenAttendeeList.remove(i - 1);
 			}
 		}
+	}
+	
+	private String getValidatedMeetingCoordinators(SignupMeeting meeting){
+		List<String> allCoordinatorIds = getExistingCoordinatorIds(meeting);
+		StringBuilder sb = new StringBuilder();
+		boolean isFirst = true;
+		for (String couId : allCoordinatorIds) {
+			if(this.sakaiFacade.hasPermissionToCreate(meeting,couId)){
+				if(isFirst){
+					sb.append(couId);
+					isFirst = false;
+				}else{
+					//safeguard -db column max size, hardly have over 10 coordinators per meeting
+					if(sb.length() < 1000)
+						sb.append("|" + couId);
+				}
+			}
+		}
+		
+		return sb.length()<1? null : sb.toString();
+	}
+	
+	private List<String> getExistingCoordinatorIds(SignupMeeting meeting){
+		List<String> coUsers = new ArrayList<String>();
+		String coUserIdsString = meeting.getCoordinatorIds();
+		if(coUserIdsString !=null && coUserIdsString.trim().length()>0){
+			StringTokenizer userIdTokens = new StringTokenizer(coUserIdsString,"|");
+			while(userIdTokens.hasMoreTokens()){
+				String uId = userIdTokens.nextToken();
+				coUsers.add(uId);				
+			}
+		}
+		
+		return coUsers;		
 	}
 
 	/**
@@ -1141,13 +1261,24 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 	* @return true if sakai property signup.enableAttendance is true, else will return false
 	*/
 	public boolean isAttendanceOn() {
-			
-		if ("true".equalsIgnoreCase(getSakaiFacade().getServerConfigurationService().getString("signup.enableAttendance","false"))){
-			return true;
-		}
-		else{
-			return false;
-		}
+		return Utilities.getSignupMeetingsBean().isAttendanceOn();
+	}
+	
+	/**
+	 * Get a list of users that have permission, but format it as a SelectItem list for the dropdown.
+	 * Since this is a new item there will be no current instructor so it returns the current user at the top of the list
+	 * We send a null signup meeting param as this is a new meeting.
+	 */
+	public List<SelectItem> getInstructors() {
+		return Utilities.getSignupMeetingsBean().getInstructors(signupMeeting);
+	}
+	
+	/**
+	 * This is for UI page to determine whether the email checkbox should be checked and disabled to change
+	 * @return
+	 */
+	public boolean isMandatorySendEmail(){
+		return this.mandatorySendEmail;
 	}
 	
 }

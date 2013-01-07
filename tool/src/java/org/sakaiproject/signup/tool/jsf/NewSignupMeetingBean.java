@@ -35,7 +35,9 @@ import javax.faces.event.ActionEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
 import javax.faces.context.FacesContext;
+import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.exception.IdUnusedException;
@@ -57,6 +59,7 @@ import org.sakaiproject.signup.tool.jsf.organizer.action.CreateSitesGroups;
 import org.sakaiproject.signup.tool.util.SignupBeanConstants;
 import org.sakaiproject.signup.tool.util.Utilities;
 import org.sakaiproject.site.api.Site;
+import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 
 /**
@@ -98,6 +101,12 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	
 	//New Location added in the editable field
 	private String customLocation;
+	
+	//Category selected from the dropdown
+	private String selectedCategory;
+	
+	//New Category added in the editable field
+	private String customCategory;
 
 	private String repeatType;
 
@@ -129,6 +138,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 
 	private boolean receiveEmail;
 	
+	private boolean sendEmailByOwner;
+	
 	private static boolean DEFAULT_ALLOW_WAITLIST = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.allow.waitlist", "true")) ? true : false;
 		
 	private static boolean DEFAULT_ALLOW_COMMENT = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.allow.comment", "true")) ? true : false;
@@ -140,11 +151,19 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	private static boolean DEFAULT_USERID_INPUT_MODE_OPTION_CHOICE = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.userId.inputMode.choiceOption.setting", "true")) ? true : false;
 	
 	private static boolean DEFAULT_EXPORT_TO_CALENDAR_TOOL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.export.to.calendar.setting", "true")) ? true : false;
+
+	private static boolean DEFAULT_CREATE_GROUPS = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.create.groups.setting", "true")) ? true : false;
+
+	protected static boolean NEW_MEETING_SEND_EMAIL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal(
+			"signup.email.notification.mandatory.for.newMeeting", "true")) ? true : false;
 	
-	//fix layout issue for ckEditor - it should be fixed now by using tomhawhk 1.1.10 version instead of 1.1.9
-	private boolean ckEditor = false;//"ckeditor".equalsIgnoreCase(Utilities.getSignupConfigParamVal("wysiwyg.editor", "FCKeditor")) ? true : false;
+	private boolean mandatorySendEmail = NEW_MEETING_SEND_EMAIL;
+	
+	private String sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;
 	
 	private boolean publishToCalendar = DEFAULT_EXPORT_TO_CALENDAR_TOOL;
+	
+	private boolean createGroups = DEFAULT_CREATE_GROUPS;
 	
 	private boolean allowWaitList = DEFAULT_ALLOW_WAITLIST;
 	
@@ -161,13 +180,15 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	private List<SelectItem> meetingTypeRadioBttns;
 
 	List<SignupUser> allSignupUsers;
+	
+	List<SignupUser> allPossibleCoordinators;
 
 	private List<SelectItem> allAttendees;
 
 	private UIInput newAttendeeInput;
 
 	/* proxy param */
-	private String eidInputByUser;
+	private String eidOrEmailInputByUser;
 
 	private UIData timeslotWrapperTable;
 
@@ -192,9 +213,9 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	
 	private boolean otherSitesAvailability;
 	
-	private boolean userDefinedTS=false;
+	private boolean userDefinedTS=false;	
 	
-	private boolean sendEmailAttendeeOnly = false;
+	private String creatorUserId;
 	
 	private int maxSlots;
 	
@@ -244,8 +265,37 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	public void setcustomLocation(String customLocation) {
 		this.customLocation = customLocation;
 	}
+	
+	public String getselectedCategory() {
+		return selectedCategory;
+	}
 
+	public void setselectedCategory(String selectedCategory) {
+		this.selectedCategory = selectedCategory;
+	}
+	
+	public String getcustomCategory() {
+		return customCategory;
+	}
+
+	public void setcustomCategory(String customCategory) {
+		this.customCategory = customCategory;
+	}
+	
+	public String getCreatorUserId() {
+		if(this.creatorUserId ==null){
+			//set current user as default meeting organizer if case people forget to select one
+			return sakaiFacade.getCurrentUserId();
+		}
+		return creatorUserId;
+	}
+
+	public void setCreatorUserId(String creatorUserId) {
+		this.creatorUserId = creatorUserId;
+	}
+	
 	public boolean isOtherSitesAvailability() {
+		
 		//checking for tool property, if it doesn't exist,take value as default
 		String toolProperty = sakaiFacade.getToolManager().getCurrentPlacement().getConfig().getProperty("signup.other.sites.availability", "default");
 		if (toolProperty.equals("default")) {
@@ -334,14 +384,19 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 
 		signupMeeting = new SignupMeeting();
 		signupMeeting.setMeetingType(INDIVIDUAL);
+		
 		Date date = new Date();
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(date);
-		calendar.set(Calendar.MINUTE, 0);
-		calendar.set(Calendar.SECOND, 0);
-		calendar.set(Calendar.MILLISECOND, 0);
-		signupMeeting.setStartTime(calendar.getTime());
-		signupMeeting.setEndTime(calendar.getTime());
+		Calendar startCal = Calendar.getInstance();
+		startCal.setTime(date);
+		startCal.set(Calendar.MINUTE, 0);
+		startCal.set(Calendar.SECOND, 0);
+		startCal.set(Calendar.MILLISECOND, 0);
+		signupMeeting.setStartTime(startCal.getTime());
+		
+		Calendar endCal = startCal;
+		endCal.add(Calendar.HOUR, 1);
+		signupMeeting.setEndTime(endCal.getTime());
+		
 		unlimited = false;
 		recurrence = false;
 		assignParicitpantsToAllRecurEvents = false;
@@ -355,16 +410,21 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		deadlineTimeType = Utilities.HOURS;
 		validationError = false;
 		sendEmail = DEFAULT_SEND_EMAIL;
-		sendEmailAttendeeOnly = false;
+		if(NEW_MEETING_SEND_EMAIL){
+			sendEmail = NEW_MEETING_SEND_EMAIL;
+		}
+		sendEmailToSelectedPeopleOnly=SEND_EMAIL_ALL_PARTICIPANTS;
 		receiveEmail = false;
+		sendEmailByOwner= DEFAULT_SEND_EMAIL; /*will be inherited per meeting basis*/
 		allowComment = DEFAULT_ALLOW_COMMENT;
 		allowWaitList = DEFAULT_ALLOW_WAITLIST;
 		autoReminder = DEFAULT_AUTO_RIMINDER;
 		publishToCalendar= DEFAULT_EXPORT_TO_CALENDAR_TOOL;
+		createGroups = DEFAULT_CREATE_GROUPS;
 		currentStepHiddenInfo = null;
 		eidInputMode = false;
 		repeatType = ONCE_ONLY;
-		repeatUntil = calendar.getTime();
+		repeatUntil = startCal.getTime();
 		recurLengthChoice="1";//0 for num of repeat, 1 for date choice
 		occurrences=0;
 		this.publishedSite = null;
@@ -372,6 +432,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		userDefinedTS=false;
 		customTimeSlotWrpList=null;
 		otherSitesAvailability = true;
+		creatorUserId = null;
+		
 		/*cleanup unused attachments in CHS*/
 		if(this.attachments !=null && this.attachments.size()>0){
 			for (SignupAttachment attach : attachments) {
@@ -394,9 +456,12 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		otherSites = null;
 		/* for main meetingpage */
 		Utilities.resetMeetingList();
-		this.eidInputByUser = null;
+		this.eidOrEmailInputByUser = null;
 		this.selectedLocation=null;
-		this.customLocation=null;
+		this.customLocation="";
+		this.selectedCategory=null;
+		this.customCategory="";
+		this.creatorUserId=null;
 		/*clean up everything in getUserDefineTimeslotBean*/
 		getUserDefineTimeslotBean().reset(UserDefineTimeslotBean.NEW_MEETING);
 	}
@@ -408,10 +473,23 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
  	 */
  	public List<SelectItem> getAllLocations(){
  		
- 		List<SelectItem> locations= new ArrayList<SelectItem>();
+ 		List<SelectItem> locations = new ArrayList<SelectItem>();
  		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
  		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
  		return locations;
+ 	}
+ 	
+	/**
+ 	 * This method is called to get all categories to populate the dropdown, for new signup creation.
+ 	 * 
+ 	 * @return list of categories
+ 	 */
+ 	public List<SelectItem> getAllCategories(){
+ 		
+ 		List<SelectItem> categories = new ArrayList<SelectItem>();
+ 		categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
+ 		categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		return categories;
  	}
  	
 	/**
@@ -504,19 +582,42 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 
 		if (step.equals("step1")) {
 			
+			boolean locationSet = false;
+			
 			//Set Location		
-			if (this.customLocation!=null && !this.customLocation.equals("")){
+			if (StringUtils.isNotBlank(customLocation)){
+				logger.debug("custom location set: " + customLocation);
 				this.signupMeeting.setLocation(customLocation);
-				
+				locationSet = true;
 			}
-			else{
-				if (selectedLocation==null || selectedLocation.equals(Utilities.rb.getString("select_location"))){
-					validationError = true;
-					Utilities.addErrorMessage(Utilities.rb.getString("event.location_not_assigned"));
-					return;
-				}
+			
+			if (!locationSet && StringUtils.isNotBlank(selectedLocation) && !StringUtils.equals(selectedLocation, Utilities.rb.getString("select_location"))){
 				this.signupMeeting.setLocation(selectedLocation);
+				logger.debug("chose a location: " + selectedLocation);
+				locationSet = true;
 			}
+			
+			if(!locationSet) {
+				validationError = true;
+				Utilities.addErrorMessage(Utilities.rb.getString("event.location_not_assigned"));
+				return;
+			}
+			
+			
+			//Set Category	
+			//custom
+			if (StringUtils.isNotBlank(customCategory)){
+				this.signupMeeting.setCategory(customCategory);
+			} 
+			else{
+				//or from the dropdown, but if we don't choose one or left it as the 'choose category method' then don't set it
+				if (!StringUtils.equals(selectedCategory, Utilities.rb.getString("select_category"))){
+					this.signupMeeting.setCategory(selectedCategory);
+				}
+			}
+			
+			//set instructor
+			this.signupMeeting.setCreatorUserId(creatorUserId);
 			
 			Date eventEndTime = signupMeeting.getEndTime();
 			Date eventStartTime = signupMeeting.getStartTime();
@@ -621,6 +722,10 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			if(!isUserDefinedTS() && CUSTOM_TIMESLOTS.equals(this.signupMeeting.getMeetingType())){
 				this.signupMeeting.setMeetingType(INDIVIDUAL);
 			}
+			
+			/*pre-load all possible coordinators for step2*/
+			signupMeeting.setSignupSites(CreateSitesGroups.getSelectedSignupSites(getCurrentSite(), getOtherSites()));
+			this.allPossibleCoordinators = this.sakaiFacade.getAllPossbileCoordinators(this.signupMeeting);			
 
 		}
 	}
@@ -637,15 +742,15 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		int endMonth = calendar.get(Calendar.MONTH);
 		int endDay = calendar.get(Calendar.DATE);
 		if (startYear != endYear){
-			Utilities.addMessage(Utilities.rb.getString("warning.event.crossed_twoYears"));
+			Utilities.addInfoMessage(Utilities.rb.getString("warning.event.crossed_twoYears"));
 			return;
 		}
 		if (startMonth != endMonth){
-			Utilities.addMessage(Utilities.rb.getString("warning.event.crossed_twoMonths"));
+			Utilities.addInfoMessage(Utilities.rb.getString("warning.event.crossed_twoMonths"));
 			return;
 		}
 		if (startDay != endDay){
-			Utilities.addMessage(Utilities.rb.getString("warning.event.crossed_twoDays"));
+			Utilities.addInfoMessage(Utilities.rb.getString("warning.event.crossed_twoDays"));
 			return;
 		}
 		
@@ -685,7 +790,10 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			//reset warning for ending time auto-adjustment
 			setEndTimeAutoAdjusted(false);
 			//reset who should receive emails
-			setSendEmailAttendeeOnly(false);
+			//setSendEmailAttendeeOnly(false);
+			if(this.sendEmailToSelectedPeopleOnly.equals(SEND_EMAIL_ONLY_SIGNED_UP_ATTENDEES)){
+				sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;//reset
+			}
 			return ADD_MEETING_STEP2_PAGE_URL;
 		}
 
@@ -763,13 +871,13 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 
 	/* Prepare the data for saving action */
 	private void preSaveAction() {
-		SignupSite sSite = new SignupSite();
-		String currentLocationId = sakaiFacade.getCurrentLocationId();
-		sSite.setSiteId(currentLocationId);
-		sSite.setTitle(sakaiFacade.getLocationTitle(currentLocationId));
-		List<SignupSite> signupSites = new ArrayList<SignupSite>();
-		signupSites.add(sSite);
-		signupMeeting.setSignupSites(signupSites);
+		//SignupSite sSite = new SignupSite();
+		//String currentLocationId = sakaiFacade.getCurrentLocationId();
+		//sSite.setSiteId(currentLocationId);
+		//sSite.setTitle(sakaiFacade.getLocationTitle(currentLocationId));
+		//List<SignupSite> signupSites = new ArrayList<SignupSite>();
+		//signupSites.add(sSite);
+		//signupMeeting.setSignupSites(signupSites);
 		List<SignupTimeslot> slots = timeslots();
 		signupMeeting.setSignupTimeSlots(slots);
 
@@ -787,19 +895,23 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		// TODO need validate and handle error for case: deadline is before
 		// sBegin
 		signupMeeting.setSignupDeadline(sDeadline);
-
+        //maybe duplicated, it is already set up after 'step1'
 		signupMeeting.setSignupSites(CreateSitesGroups.getSelectedSignupSites(getCurrentSite(), getOtherSites()));
 
-		signupMeeting.setCreatorUserId(sakaiFacade.getCurrentUserId());
+		signupMeeting.setCreatorUserId(this.creatorUserId);
 		signupMeeting.setReceiveEmailByOwner(receiveEmail);
+		signupMeeting.setSendEmailByOwner(sendEmailByOwner);
 		signupMeeting.setAllowWaitList(this.allowWaitList);
 		signupMeeting.setAllowComment(this.allowComment);
 		signupMeeting.setAutoReminder(this.autoReminder);
 		signupMeeting.setEidInputMode(this.eidInputMode);
 		signupMeeting.setMaxNumOfSlots(new Integer(this.maxNumOfSlots));
-		 
+		signupMeeting.setCoordinatorIds(Utilities.getSelectedCoordinators(this.allPossibleCoordinators,this.creatorUserId));
 		/* add attachments */
 		signupMeeting.setSignupAttachments(this.attachments);
+		
+		signupMeeting.setCreateGroups(this.createGroups);
+		
 	}
 
 	/**
@@ -841,31 +953,37 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	public String addAttendee() {
 		TimeslotWrapper timeslotWrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
 
-		String attendeeEid = null;
-		String attendeeUserId;
-		try {
-			if (isEidInputMode())
-				attendeeEid = getEidInputByUser();
-			else
-				attendeeEid = (String) newAttendeeInput.getValue();
+		String attendeeEidOrEmail = null;
+		if (isEidInputMode()) {
+			attendeeEidOrEmail = getEidOrEmailInputByUser();
+		} else {
+			attendeeEidOrEmail = (String) newAttendeeInput.getValue();
+		}
+		
+		//check if there are multiple email addresses associated with input
+		List<String> associatedEids = getEidsForEmail(attendeeEidOrEmail.trim());
+		if(associatedEids.size() > 1) {
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("exception.multiple.eids"), new Object[] {attendeeEidOrEmail, StringUtils.join(associatedEids, ", ")}));
+			return "";
+		}
 
-			attendeeUserId = sakaiFacade.getUserId(attendeeEid);
-		} catch (UserNotDefinedException e) {
-			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + attendeeEid);
+		String attendeeUserId = getUserIdForEidOrEmail(attendeeEidOrEmail.trim());
+		if(StringUtils.isBlank(attendeeEidOrEmail)){
+			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + attendeeEidOrEmail);
 			return "";
 		}
 		
 		SignupUser attendeeSignUser = getSakaiFacade().getSignupUser(this.signupMeeting, attendeeUserId);
 		if(attendeeSignUser ==null){
-			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {attendeeEid}));
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {attendeeEidOrEmail}));
 			return "";
 		}
 		
 		SignupAttendee attendee = new SignupAttendee(attendeeUserId, attendeeSignUser.getMainSiteId());
 
-		if (isDuplicateAttendee(timeslotWrapper.getTimeSlot(), attendee))
+		if (isDuplicateAttendee(timeslotWrapper.getTimeSlot(), attendee)) {
 			Utilities.addErrorMessage(Utilities.rb.getString("attendee.already.in.timeslot"));
-		else {
+		} else {
 			timeslotWrapper.addAttendee(attendee, sakaiFacade.getUserDisplayName(attendeeUserId));
 		}
 
@@ -1347,6 +1465,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 
 		return sendEmail;
 	}
+	
 
 	/**
 	 * This is a setter for UI.
@@ -1358,6 +1477,24 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		this.sendEmail = sendEmail;
 	}
 
+	/**
+	 * This is a getter method for UI.
+	 * 
+	 * @return true if email notification will be the default value.
+	 */
+	public boolean getSendEmailByOwner() {
+		return sendEmailByOwner;
+	}
+
+	/**
+	 * This is a getter method for UI.
+	 * 
+	 * @return a constant string.
+	 */
+	public void setSendEmailByOwner(boolean sendEmailByOwner) {
+		this.sendEmailByOwner = sendEmailByOwner;
+	}
+	
 	/**
 	 * This is a getter method for UI.
 	 * 
@@ -1446,7 +1583,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			e.printStackTrace();
 		}
 		
-		this.allSignupUsers = sakaiFacade.getAllUsers(meeting);
+		this.allSignupUsers = sakaiFacade.getAllPossibleAttendees(meeting);
 
 		if (allSignupUsers != null
 				&& allSignupUsers.size() > MAX_NUM_PARTICIPANTS_FOR_DROPDOWN_BEFORE_AUTO_SWITCH_TO_EID_INPUT_MODE) {
@@ -1625,25 +1762,26 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	 * 
 	 * @return empty string.
 	 */
-	public String getUserInputEid() {
+	public String getUserInputEidOrEmail() {
 		return "";
 	}
 
 	/**
 	 * This is for Javascript UI only.
 	 * 
-	 * @param userInputEid
-	 *            a String value.
+	 * @param value
+	 *            eid or email for the user
 	 */
-	public void setUserInputEid(String userInputEid) {
-		if (userInputEid != null && userInputEid.length() > 0)
-			this.eidInputByUser = userInputEid;
+	public void setUserInputEidOrEmail(String value) {
+		if (StringUtils.isNotBlank(value)) {
+			this.eidOrEmailInputByUser = value;
+		}
 	}
 
 	/* Proxy method */
-	private String getEidInputByUser() {
-		String eid = this.eidInputByUser;
-		this.eidInputByUser = null;// reset for use once only
+	private String getEidOrEmailInputByUser() {
+		String eid = this.eidOrEmailInputByUser;
+		this.eidOrEmailInputByUser = null;// reset for use once only
 		return eid;
 	}
 
@@ -1663,8 +1801,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		}
 		
 		/*pass who should receive the emails*/
-		signupMeeting.setEmailAttendeesOnly(getSendEmailAttendeeOnly());
-		
+		signupMeeting.setSendEmailToSelectedPeopleOnly(this.sendEmailToSelectedPeopleOnly);
+				
 		CreateMeetings createMeeting = new CreateMeetings(signupMeeting, sendEmail,
 				!assignParicitpantsToAllRecurEvents, assignParicitpantsToAllRecurEvents, getSignupBegins(),
 				getSignupBeginsType(), getDeadlineTime(), getDeadlineTimeType(), getRecurLengthChoice(), sakaiFacade, signupMeetingService,
@@ -1673,6 +1811,10 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		try {
 			/*need push to calendar tool*/
 			createMeeting.setPublishToCalendar(getPublishToCalendar());
+						
+			/*do we want to also create groups? */
+			createMeeting.setCreateGroups(this.createGroups);
+			
 			createMeeting.processSaveMeetings();
 			
 			/*handle attachments and it should not be cleaned up in CHS*/
@@ -1682,7 +1824,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			logger.info(Utilities.rb.getString("no.permission_create_event") + " - " + e.getMessage());
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 	
 	}
@@ -1849,10 +1991,12 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	}
 	
 	public boolean isAllLocationsEmpty(){
-		if (Utilities.getSignupMeetingsBean().isMeetingsAvailable())
-			return false;
-		else
-			return true;
+		return !Utilities.getSignupMeetingsBean().isMeetingsAvailable();
+			
+	}
+	
+	public boolean isCategoriesExist() {
+		return !Utilities.getSignupMeetingsBean().getAllCategories().isEmpty();
 	}
 
 	public UserDefineTimeslotBean getUserDefineTimeslotBean() {
@@ -1886,13 +2030,13 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	public void setPublishToCalendar(boolean publishToCalendar) {
 		this.publishToCalendar = publishToCalendar;
 	}
-
-	public boolean getSendEmailAttendeeOnly() {
-		return sendEmailAttendeeOnly;
+	
+	public boolean getCreateGroups() {
+		return createGroups;
 	}
 
-	public void setSendEmailAttendeeOnly(boolean sendEmailAttendeeOnly) {
-		this.sendEmailAttendeeOnly = sendEmailAttendeeOnly;
+	public void setCreateGroups(boolean createGroups) {
+		this.createGroups = createGroups;
 	}
 
 	public String getRecurLengthChoice() {
@@ -1915,17 +2059,106 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	 * @return true if sakai property signup.enableAttendance is true, else will return false
 	 */
 	public boolean isAttendanceOn() {
-			
-		if ("true".equalsIgnoreCase(getSakaiFacade().getServerConfigurationService().getString("signup.enableAttendance","false"))){
-			return true;
-		}
-		else{
-			return false;
-		}
+		return Utilities.getSignupMeetingsBean().isAttendanceOn();
 	}
 
-	public boolean getCkEditor() {
-		return ckEditor;
+	/**
+	 * Get a list of users that have permission, but format it as a SelectItem list for the dropdown.
+	 * Since this is a new item there will be no current instructor so it returns the current user at the top of the list
+	 * We send a null signup meeting param as this is a new meeting.
+	 */
+	public List<SelectItem> getInstructors() {
+		return Utilities.getSignupMeetingsBean().getInstructors(null);
 	}
-			
+	
+	/**
+	 * Get the instructor name attached to the value currently set for the instructor
+	 */
+	public String getInstructorName() {
+		return Utilities.getSignupMeetingsBean().getInstructorName(creatorUserId);
+	}
+		
+	/**
+	 * Gets the userId for a user, given an eid or an email address. 
+	 * We check if it matches the eid first, then if it matches an email address.
+	 * If nothing, return null.
+	 * 
+	 * @param value		the string to lookup, could be an eid or an email address
+	 * @return	the userId or null if User cannot be found
+	 */
+	public String getUserIdForEidOrEmail(String value) {
+		User u = sakaiFacade.getUserByEid(value);
+		if(u==null) {
+			u=sakaiFacade.getUserByEmail(value);
+		}
+		
+		if(u!=null) {
+			return u.getId();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Get the eids assocaited with an email address, ie there may be two or more users with the same email address. 
+	 * We need to be able to handle this in the UI.
+	 * 
+	 * @param email
+	 * @return	List<String> of eids.
+	 */
+	public List<String> getEidsForEmail(String email) {
+		List<User> users = sakaiFacade.getUsersByEmail(email);
+		
+		List<String> eids = new ArrayList<String>();
+		for(User u:users) {
+			eids.add(u.getEid());
+		}
+		
+		return eids;
+	}
+
+	public List<SignupUser> getAllPossibleCoordinators() {
+		return allPossibleCoordinators;
+	}
+
+	public void setAllPossibleCoordinators(List<SignupUser> allPossibleCoordinators) {
+		this.allPossibleCoordinators = allPossibleCoordinators;
+	}
+	
+	/**
+	 * This is for UI page to determine whether the email checkbox should be checked and disabled to change
+	 * @return
+	 */
+	public boolean isMandatorySendEmail(){
+		return this.mandatorySendEmail;
+	}
+
+	public String getSendEmailToSelectedPeopleOnly() {
+		return sendEmailToSelectedPeopleOnly;
+	}
+
+	public void setSendEmailToSelectedPeopleOnly(
+			String sendEmailToSelectedPeopleOnly) {
+		this.sendEmailToSelectedPeopleOnly = sendEmailToSelectedPeopleOnly;
+	}
+	
+	private String iframeId = "";
+
+	/**
+	 * This is a getter method which provide current Iframe id for refresh
+	 * IFrame purpose.
+	 * 
+	 * @return a String
+	 */
+	public String getIframeId() {
+		HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext()
+				.getRequest();
+		String iFrameId = (String) request.getAttribute("sakai.tool.placement.id");
+		return iFrameId;
+	}
+
+	public void setIframeId(String iframeId) {
+		this.iframeId = iframeId;
+	}	
+	
 }

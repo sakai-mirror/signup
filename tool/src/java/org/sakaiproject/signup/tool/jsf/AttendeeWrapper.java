@@ -23,7 +23,7 @@
 package org.sakaiproject.signup.tool.jsf;
 
 import org.sakaiproject.signup.model.SignupAttendee;
-import org.sakaiproject.signup.util.PlainTextFormat;
+import org.sakaiproject.signup.tool.util.PlainTextFormat;
 
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
@@ -130,6 +130,20 @@ public class AttendeeWrapper {
 	}
 	
 	/**
+	 * @return the attended
+	 */
+	public boolean isAttended() {
+		return this.signupAttendee.isAttended();
+	}
+
+	/**
+	 * @param attended 
+	 */
+	public void setAttended(boolean attended) {
+		this.signupAttendee.setAttended(attended);
+	}
+	
+	/**
 	 * @return the attendeeEmail
 	 */
 	public String getAttendeeEmail() {
@@ -148,17 +162,4 @@ public class AttendeeWrapper {
 		return attendeeEmail;
 	}
 
-	/**
-	 * @return the attended
-	 */
-	public boolean isAttended() {
-		return this.signupAttendee.isAttended();
-	}
-
-	/**
-	 * @param attended 
-	 */
-	public void setAttended(boolean attended) {
-		this.signupAttendee.setAttended(attended);
-	}
 }

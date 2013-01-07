@@ -29,15 +29,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarEventEdit;
+import org.sakaiproject.calendaring.api.ExternalCalendaringService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.signup.dao.SignupMeetingDao;
 import org.sakaiproject.signup.logic.messages.SignupEventTrackingInfo;
 import org.sakaiproject.signup.model.MeetingTypes;
+import org.sakaiproject.signup.model.SignupAttendee;
 import org.sakaiproject.signup.model.SignupGroup;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupSite;
@@ -61,16 +67,20 @@ import org.springframework.dao.OptimisticLockingFailureException;
  * 
  * </p>
  */
-public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, MeetingTypes {
+public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, MeetingTypes, SignupMessageTypes {
 
 	private static Log log = LogFactory.getLog(SignupMeetingServiceImpl.class);
 
+	@Getter @Setter
 	private SignupMeetingDao signupMeetingDao;
 
+	@Getter @Setter
 	private SakaiFacade sakaiFacade;
 	
+	@Getter @Setter
 	private SignupCacheService signupCacheService;
 
+	@Getter @Setter
 	private SignupEmailFacade signupEmailFacade;
 
 	public void init() {
@@ -430,43 +440,6 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	}
 
 	/**
-	 * get SignupMeetingDao object
-	 */
-	public SignupMeetingDao getSignupMeetingDao() {
-		return signupMeetingDao;
-	}
-
-	/**
-	 * set SignupMeetingDao object
-	 * 
-	 * @param signupMeetingDao
-	 *            a SignupMeetingDao object, which has implemented the
-	 *            SignupMeetingDao interface
-	 */
-	public void setSignupMeetingDao(SignupMeetingDao signupMeetingDao) {
-		this.signupMeetingDao = signupMeetingDao;
-	}
-
-	/**
-	 * get a SakaiFacade object, which has implemented the SakaiFacade interface
-	 * 
-	 * @return a SakaiFacade object
-	 */
-	public SakaiFacade getSakaiFacade() {
-		return sakaiFacade;
-	}
-
-	/**
-	 * set the SakaiFacade object
-	 * 
-	 * @param sakaiFacade
-	 *            a SakaFacade object
-	 */
-	public void setSakaiFacade(SakaiFacade sakaiFacade) {
-		this.sakaiFacade = sakaiFacade;
-	}
-
-	/**
 	 * {@inheritDoc}
 	 */
 	public boolean isAllowedToCreateinGroup(String userId, String siteId, String groupId) {
@@ -659,16 +632,22 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 		List<SignupTimeslot> calendarBlocks = scanDivideCalendarBlocks(meeting);
 		boolean hasMulptleBlock = calendarBlocks.size() > 1? true : false;
 		
-		/*we remove all the calendar events for custom-defined type to simplify process*/
-		if(CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())){
-			List<SignupMeeting> smList = new ArrayList<SignupMeeting>();
-			smList.add(meeting);
-			removeCalendarEvents(smList);
+		/*we remove all the calendar events for custom-defined type to simplify process
+		 * when existing meetings come here. New meeting don't have permission setting yet 
+		 * and it is null.*/
+		if(meeting.getPermission() !=null && meeting.getPermission().isUpdate()){
+			//only instructor or maintainer/TF can do this since they can create/delete/move new blocks
+			if(CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())){
+				List<SignupMeeting> smList = new ArrayList<SignupMeeting>();
+				smList.add(meeting);
+				removeCalendarEvents(smList);
+			}
 		}
 		
 		int sequence = 1;
 		boolean firstBlockLoop = true;
 		/*only custom-defined events have multiple discontinued calendar blocks*/
+		int calBlock =0;
 		for (SignupTimeslot calendarBlock : calendarBlocks) {			
 			for (SignupSite site : signupSites) {
 				try {
@@ -687,21 +666,39 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 						}
 					}
 					CalendarEventEdit eventEdit = null;
+					
+					if(meeting.getPermission() !=null && !meeting.getPermission().isUpdate() && CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())){
+						/*Case: for customed Calendar blocks, we need to break down the eventIds and update one by one.
+						 *only attendee can come here. Instructor/TF will first remove old Calendar blocks and create new ones again for simplicity!!!
+						 */
+						eventId = retrieveCustomCalendarEventId(calBlock,eventId);
+					}
+					else{
+						/*make sure that instructor/TF will create new Calendar blocks since calendars is already removed*/
+						if(CUSTOM_TIMESLOTS.equals(meeting.getMeetingType()))
+								eventId =null;
+					}
 	
 					boolean isNew = true;
-					/*for custom_ts type, we have already removed old ones, no modification here*/
-					if (eventId != null && eventId.trim().length() > 1 && !CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())) {
+					/*for custom_ts type, TF/instructor has no modification here eventId is null*/
+					if (eventId != null && eventId.trim().length() > 1) {
+						//allow attendee to update calendar
+                        SecurityAdvisor advisor = sakaiFacade.pushAllowCalendarEdit();
+
 						try {
 							eventEdit = calendar.getEditEvent(eventId,
 									org.sakaiproject.calendar.api.CalendarService.EVENT_MODIFY_CALENDAR);
 							isNew = false;
-							if (!calendar.allowEditEvent(eventId))
+							if (!calendar.allowEditEvent(eventId)) {
 								continue;
+                            }
 						}catch (IdUnusedException e) {
 							log.debug("IdUnusedException: " + e.getMessage());
 							// If the event was removed from the calendar.
 							eventEdit = calendarEvent(calendar, meeting, site);
-						}
+                        } finally {
+                            sakaiFacade.popSecurityAdvisor(advisor);
+                        }
 					} else {
 						eventEdit = calendarEvent(calendar, meeting, site);
 					}
@@ -714,12 +711,12 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 						title_suffix = " (part " + sequence + ")";
 						sequence++;
 					}
-					
+
 					populateDataForEventEditObject(eventEdit, meeting,title_suffix, calendarBlock.getStartTime(),calendarBlock.getEndTime());
 					
 					calendar.commitEvent(eventEdit);
 					
-					if (isNew || CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())) {
+					if (isNew) {
 						saveMeeting = true; // Need to save these back
 						if (site.isSiteScope()) {
 							if(firstBlockLoop){
@@ -753,6 +750,7 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 			}//end-for
 			
 			firstBlockLoop = false;
+			calBlock++;
 		}//end-for
 		if (saveMeeting) {
 			updateMeetingWithVersionHandling(meeting);
@@ -773,18 +771,95 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 		Time end = timeService.newTime(endTime.getTime());
 		TimeRange timeRange = timeService.newTimeRange(start, end, true, false);
 		eventEdit.setRange(timeRange);
+		
+		String attendeeNamesMarkup = "";
+		int num = 0;
 
-		String desc = meeting.getDescription();
+        if(meeting.getSignupTimeSlots().size() > 0) {
+            // TODO: 'Attendees' needs internationalising
+            attendeeNamesMarkup += "<br /><br /><span style=\"font-weight: bold\"><b>Attendees:</b></span><br />";
+        }
+
+        boolean displayAttendeeName = false;
+        for(SignupTimeslot ts : meeting.getSignupTimeSlots()) {
+        	displayAttendeeName = ts.isDisplayAttendees();//just need one of TS, it is not fine-grained yet
+        	//case: custom calender blocks, only print the related info
+        	if((startTime.getTime() <=  ts.getStartTime().getTime()) && endTime.getTime() >= ts.getEndTime().getTime()){
+        		num += ts.getAttendees().size();
+	            if(ts.isDisplayAttendees() && !ts.getAttendees().isEmpty()){
+	            	//privacy issue
+		            for(SignupAttendee attendee : ts.getAttendees()) {
+		                attendeeNamesMarkup += ("<span style=\"font-weight: italic\"><i>" + sakaiFacade.getUserDisplayName(attendee.getAttendeeUserId()) + "</i></span><br />");
+		            }
+	            }
+        	}
+        }
+        
+        if(!displayAttendeeName || num < 1){
+        	 attendeeNamesMarkup += ("<span style=\"font-weight: italic\"><i> Currently, " +  num + " attendees have been signed up.</i></span><br />");
+        }
+         
+		String desc = meeting.getDescription() + attendeeNamesMarkup;
 		eventEdit.setDescription(PlainTextFormat.convertFormattedHtmlTextToPlaintext(desc));
 		eventEdit.setLocation(meeting.getLocation());
-		eventEdit.setDisplayName(meeting.getTitle() + title_suffix);
+        // TODO: 'attendees' needs internationalising
+		eventEdit.setDisplayName(meeting.getTitle() + title_suffix + " (" + num + " attendees)");			
 		eventEdit.setRange(timeRange);
+	}
+	
+	private String retrieveCustomCalendarEventId(int blockNum, String eventIds){
+		/*separate the eventIds token by '|' */
+		StringTokenizer token = new StringTokenizer(eventIds,"|"); 
+		int index=0;
+		while (token.hasMoreTokens()) {
+			if(blockNum == index++)
+				return token.nextToken().trim();
+			else
+				token.nextToken();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * scan for existing meetings to see whether it has multiple calendar blocks
+	 * @param meeting
+	 * @return
+	 */
+	private boolean hasMeetingWithMultipleCalendarBlocks(SignupMeeting meeting){
+		if(!CUSTOM_TIMESLOTS.equals(meeting.getMeetingType())){
+			return false;
+		}
+		boolean hasMultipleBlocks = false;
+		List<SignupSite> sites = meeting.getSignupSites();
+		if (sites == null || sites.isEmpty())
+			return false;
+		
+		for (SignupSite site : sites) {
+			String eventId = null;
+			if (site.isSiteScope()) {
+				eventId = site.getCalendarEventId();
+				if(eventId !=null && eventId.contains("|")){
+					return true;
+				}
+			} else {
+				List<SignupGroup> signupGroups = site.getSignupGroups();
+				for (SignupGroup group : signupGroups) {
+					eventId = group.getCalendarEventId();
+					if(eventId !=null && eventId.contains("|")){
+						return true;
+					}
+				}
+			}
+			
+		}
+		return hasMultipleBlocks;
 	}
 	
 	private List<SignupTimeslot> scanDivideCalendarBlocks(SignupMeeting meeting){
 		final int timeApart = 2*60*60*1000; // 2 hours
 		List<SignupTimeslot> tsList = new ArrayList<SignupTimeslot>();
-		if(CUSTOM_TIMESLOTS.equals(meeting.getMeetingType()) && meeting.isInMultipleCalendarBlocks()){
+		if(CUSTOM_TIMESLOTS.equals(meeting.getMeetingType()) && (meeting.isInMultipleCalendarBlocks() || hasMeetingWithMultipleCalendarBlocks(meeting))){
 			List<SignupTimeslot> tsLs = meeting.getSignupTimeSlots();
 			if(tsLs !=null && !tsLs.isEmpty()){
 				/*The meetings timeslots are already sorted before coming here*/
@@ -980,24 +1055,6 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 		return groups;
 	}
 
-	/**
-	 * get SignupEmailFacade object
-	 * 
-	 * @return a SignupEmailFacade object
-	 */
-	public SignupEmailFacade getSignupEmailFacade() {
-		return signupEmailFacade;
-	}
-
-	/**
-	 * set a SignupEmailFacade object
-	 * 
-	 * @param signupEmailFacade
-	 *            a SignupEmailFacade object
-	 */
-	public void setSignupEmailFacade(SignupEmailFacade signupEmailFacade) {
-		this.signupEmailFacade = signupEmailFacade;
-	}
 
 	/**
 	 * {@inheritDoc}
@@ -1012,7 +1069,6 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	 */
 	public void sendEmailToOrganizer(SignupEventTrackingInfo signupEventTrackingInfo) throws Exception {
 		signupEmailFacade.sendEmailToOrganizer(signupEventTrackingInfo);
-
 	}
 
 	/**
@@ -1025,8 +1081,17 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	/**
 	 * {@inheritDoc}
 	 */
-	public void removeMeetings(List<SignupMeeting> meetings) {
+	public void removeMeetings(List<SignupMeeting> meetings) throws Exception {
 		signupMeetingDao.removeMeetings(meetings);
+				
+		for(SignupMeeting m: meetings) {
+			if(!m.isMeetingExpired()) {
+				log.info("Meeting is still available, email notifications will be sent");
+				//SIGNUP-188 :If an event is cancelled, all the site members get an email
+				m.setSendEmailToSelectedPeopleOnly(SEND_EMAIL_ONLY_SIGNED_UP_ATTENDEES);
+				signupEmailFacade.sendEmailAllUsers(m, SignupMessageTypes.SIGNUP_CANCEL_MEETING);
+			}
+		}
 	}
 
 	/**
@@ -1044,13 +1109,13 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	public boolean isEventExisted(Long eventId) {
 		return signupMeetingDao.isEventExisted(eventId);
 	}
-
-	public SignupCacheService getSignupCacheService() {
-		return signupCacheService;
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void sendEmailToAttendee(SignupEventTrackingInfo signupEventTrackingInfo) throws Exception {
+		signupEmailFacade.sendEmailToAttendee(signupEventTrackingInfo);
 	}
 
-	public void setSignupCacheService(SignupCacheService signupCacheService) {
-		this.signupCacheService = signupCacheService;
-	}
 
 }

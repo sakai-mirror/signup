@@ -38,11 +38,12 @@ import org.sakaiproject.event.api.UsageSession;
 import org.sakaiproject.event.cover.EventTrackingService;
 import org.sakaiproject.event.cover.UsageSessionService;
 import org.sakaiproject.signup.logic.SakaiFacade;
+import org.sakaiproject.signup.logic.SignupUser;
 import org.sakaiproject.signup.model.MeetingTypes;
 import org.sakaiproject.signup.model.SignupAttendee;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
-import org.sakaiproject.signup.tool.jsf.ErrorMessageUIBean;
+import org.sakaiproject.signup.tool.jsf.MessageUIBean;
 import org.sakaiproject.signup.tool.jsf.SignupMeetingsBean;
 import org.sakaiproject.signup.tool.jsf.organizer.UserDefineTimeslotBean;
 import org.sakaiproject.util.ResourceLoader;
@@ -68,44 +69,55 @@ public final class Utilities implements SignupBeanConstants, MeetingTypes {
 	public static ResourceLoader rbConf = new ResourceLoader("signupConfig");
 
 	/**
-	 * Defined a constant name for errorMessageUIBean
+	 * Defined a constant name for ,essageUIBean
 	 */
-	public static final String ERROR_MESSAGE_UIBEAN = "errorMessageUIBean";
-
-	protected Log logger = LogFactoryImpl.getLog(getClass());
+	public static final String MESSAGE_UIBEAN = "messageUIBean";
+	
+	/**
+	 * Message types
+	 */
+	private static final int TYPE_ERROR=1;
+	private static final int TYPE_INFO=2;
+	
+	protected static Log logger = LogFactoryImpl.getLog(Utilities.class);
 
 	/**
-	 * Add the error message to errorMessageUIBean for UI purpose.
+	 * Add the error message to mssageUIBean for UI purpose.
 	 * 
 	 * @param errorMsg
 	 *            a error message string.
 	 */
 	public static void addErrorMessage(String errorMsg) {
-		addMessage(ERROR_MESSAGE_UIBEAN, errorMsg);
+		addMessage(MESSAGE_UIBEAN, TYPE_ERROR, errorMsg);
+	}
+	
+	/**
+	 * Add the info message to messageUIBean for UI purpose.
+	 * 
+	 * @param infoMsg
+	 *            an info message string.
+	 */
+	public static void addInfoMessage(String infoMsg) {
+		addMessage(MESSAGE_UIBEAN, TYPE_INFO, infoMsg);
 	}
 
-	private static void addMessage(String key, String errorMsg) {
+	private static void addMessage(String key, int type, String msg) {
 		FacesContext context = FacesContext.getCurrentInstance();
-		Map sessionMap = FacesContext.getCurrentInstance().getExternalContext()
-				.getSessionMap();
-		ErrorMessageUIBean errorBean = (ErrorMessageUIBean) sessionMap
-				.get(ERROR_MESSAGE_UIBEAN);
-		errorBean.setErrorMessages(errorMsg);
-		errorBean.setError(true);
-		sessionMap.put(key, errorBean);
+		Map sessionMap = FacesContext.getCurrentInstance().getExternalContext().getSessionMap();
+		MessageUIBean msgBean = (MessageUIBean) sessionMap.get(MESSAGE_UIBEAN);
+		
+		switch(type) {
+			case 1: msgBean.setErrorMessage(msg); 	break;
+			case 2: msgBean.setInfoMessage(msg);	break;
+			default: logger.error("Invalid mesage type ("+type +"). No message will be set");	break;
+		}
+		
+		sessionMap.put(key, msgBean);
 		context.renderResponse();
 	}
+	
+	
 
-	/**
-	 * Add the error message to errorMessageUIBean for UI purpose.
-	 * 
-	 * @param message
-	 *            a error message string.
-	 */
-	public static void addMessage(String message) {
-		addMessage(ERROR_MESSAGE_UIBEAN, message);
-
-	}
 
 	/**
 	 * This method will retrieve the value from Request object by the Request
@@ -464,5 +476,23 @@ public final class Utilities implements SignupBeanConstants, MeetingTypes {
 			return false;
 		}
 		return true;
+	}
+	
+	public static String getSelectedCoordinators(List<SignupUser> coordinators, String organizerId){
+		StringBuilder sb = new StringBuilder();
+		boolean isFirst = true;
+		for (SignupUser co : coordinators) {
+			if(co.isChecked() && !co.getInternalUserId().equals(organizerId)){
+				if(isFirst){
+					sb.append(co.getInternalUserId());
+					isFirst = false;
+				}else{
+					//safeguard -db column max size, hardly have over 10 coordinators per meeting
+					if(sb.length() < 1000)
+						sb.append("|" + co.getInternalUserId());
+				}
+			}
+		}
+		return sb.length()<1? null : sb.toString();
 	}
 }

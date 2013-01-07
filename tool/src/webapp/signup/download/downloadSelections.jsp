@@ -10,14 +10,16 @@
 		<style type="text/css">
 				@import url("/sakai-signup-tool/css/signupStyle.css");
 		</style>
+		<script type="text/javascript" src="/library/js/jquery/1.4.2/jquery-1.4.2.min.js"></script>
 		<script TYPE="text/javascript" LANGUAGE="JavaScript" src="/sakai-signup-tool/js/signupScript.js"></script>
+		<script type="text/javascript">
+			jQuery.noConflict();			
+    	</script>
 		
 		<sakai:view_content>
-			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/> 
+			<h:outputText value="#{msgs.event_error_alerts} #{messageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{messageUIBean.error}"/> 
 			<h:form id="items">
 			 	<sakai:view_title value="#{msgs.signup_download}"/>
-
-				<sakai:messages />
 				
 				<h:outputText value="&nbsp;" escape="false"/>
 				
@@ -26,29 +28,33 @@
 					<h:outputText value="#{msgs.events_attendee_download_instruction}" rendered="#{!DownloadEventBean.allowedToUpdate && DownloadEventBean.meetingsAvailable}" escape="false"/>
 					<h:outputText value="&nbsp;" escape="false"/>
 				</h:panelGrid>
-				<h:panelGrid columns="2">
+				<h:panelGrid columns="3">
 					<h:panelGroup>
 						<h:outputText value="#{msgs.events_dropdownbox_title}&nbsp;" escape="false"/>
 						<h:selectOneMenu id="viewByRange" value="#{DownloadEventBean.viewDateRang}" valueChangeListener="#{DownloadEventBean.processSelectedRange}" onchange="if(validateIEDisabledItem(this)){submit()};">
 							<f:selectItems value="#{DownloadEventBean.viewDropDownList}"/>
 						</h:selectOneMenu>
 					</h:panelGroup>
+										
+					<!-- filter by category dropdown -->
 					<h:panelGroup>
-						<h:panelGroup styleClass="expandAllRecurMeetings" rendered="#{DownloadEventBean.enableExpandOption && DownloadEventBean.meetingsAvailable}">
+						<h:panelGroup styleClass="padLeft"> 
+							<h:outputText value="#{msgs.filter_by_category}&nbsp;" escape="false"/>
+							<h:selectOneMenu id="viewByCategory" value="#{DownloadEventBean.categoryFilter}" valueChangeListener="#{DownloadEventBean.processSelectedCategory}" onchange="if(validateIEDisabledItem(this)){submit()};">
+								<f:selectItems value="#{DownloadEventBean.allCategoriesForFilter}"/>
+							</h:selectOneMenu>
+						</h:panelGroup>
+					</h:panelGroup>
+					<!--  expand all recurring meetings -->
+					<h:panelGroup>
+						<h:panelGroup styleClass="padLeft" rendered="#{DownloadEventBean.enableExpandOption && DownloadEventBean.meetingsAvailable}">
 							<h:selectBooleanCheckbox id="expandingchkbox" value="#{DownloadEventBean.showAllRecurMeetings}" valueChangeListener="#{DownloadEventBean.processExpandAllRcurEvents}" onclick="submit();"/>
 							<h:outputText value="#{msgs.expand_all_recur_events}" escape="false"/>
 						</h:panelGroup>
 						<h:outputText value="&nbsp;" escape="false" rendered="#{!DownloadEventBean.enableExpandOption}"/>
 					</h:panelGroup>
 				</h:panelGrid>
-				
-				<h:outputText value="&nbsp;" escape="false"/>
-				
-				<h:panelGrid columns="1" styleClass="downloadSelection"  rendered="#{DownloadEventBean.meetingsAvailable}">
-					<h:commandButton id="downloadTop"  action="#{DownloadEventBean.startDownload}" value="#{msgs.event_download_button}"  />
-				</h:panelGrid>
-					
-
+								
 				<h:panelGrid columns="1" styleClass="noMeetingsWarn" rendered="#{!DownloadEventBean.meetingsAvailable}" >
 					<h:outputText value="&nbsp;" escape="false"/>
 					<h:outputText value="#{DownloadEventBean.meetingUnavailableMessages}" />
@@ -74,7 +80,13 @@
 									<h:outputText value="#{msgs.event_tab_check_all}" escape="false"/>
 								</h:panelGroup>							
 							</f:facet>
-							<h:selectBooleanCheckbox id="selectItem" value="#{wrapper.toDownload}" />
+							<%-- checkbox for top level of recurring meetings --%>
+							<h:panelGroup rendered="#{wrapper.firstOneRecurMeeting && wrapper.recurEventsSize >1}">
+								<h:selectBooleanCheckbox id="selectItemRecur" value="#{wrapper.toDownload}" onclick="checkAllRecurring('#{wrapper.recurId}','#{wrapper.recurEventsSize}');"/>
+							</h:panelGroup>
+							<%-- normal checkbox --%>
+							<h:selectBooleanCheckbox id="selectItem" value="#{wrapper.toDownload}" rendered="#{wrapper.recurEventsSize < 1}" styleClass="#{wrapper.recurId}"/>
+							
 						</t:column>		
 						
 						<t:column defaultSorted="true" sortable="true">
@@ -89,7 +101,7 @@
 		   	    				<h:outputText value="</span>" escape="false" />
 		   	    			
 		   	    				<h:outputText value="<span id='imageClose_RM_#{wrapper.recurId}'>"  escape="false"/>
-		   	    					<h:graphicImage title="#{msgs.event_tool_tips_expand_recur_meeting}" value="/images/plusSmall.gif" styleClass="openCloseImageIcon" alt="close" style="border:none" onclick="showDetails('imageOpen_RM_#{wrapper.recurId}','imageClose_RM_#{wrapper.recurId}');showAllRelatedRecurMeetings('#{wrapper.recurId}','#{DownloadEventBean.iframeId}');"/>
+		   	    					<h:graphicImage value="/images/plusSmall.gif" alt="close" styleClass="openCloseImageIcon" title="#{msgs.event_tool_tips_expand_recur_meeting}"  style="border:none" onclick="showDetails('imageOpen_RM_#{wrapper.recurId}','imageClose_RM_#{wrapper.recurId}');showAllRelatedRecurMeetings('#{wrapper.recurId}','#{DownloadEventBean.iframeId}');"/>
 		   	    				<h:outputText value="</span>" escape="false" />
 		   	    				
 		   	    				<h:outputText value="&nbsp;" escape="false"/>
@@ -115,6 +127,16 @@
 								</t:commandSortHeader>
 							</f:facet>
 							<h:outputText value="#{wrapper.meeting.location}"/>												
+						</t:column>
+						
+						<%-- category --%>
+						<t:column sortable="true">
+							<f:facet name="header">
+								<t:commandSortHeader columnName="#{DownloadEventBean.signupSorter.categoryColumn}" immediate="true" arrow="true">
+									<h:outputText value="#{msgs.tab_event_category}" escape="false"/>
+								</t:commandSortHeader>
+							</f:facet>
+							<h:outputText value="#{wrapper.meeting.category}"/>												
 						</t:column>
 	
 						<t:column>
@@ -204,7 +226,8 @@
 				<h:panelGrid columns="1">
 					<h:outputText value="&nbsp;" escape="false"/>
 					<h:panelGroup>
-						<h:commandButton id="downloadEventsBttm"  action="#{DownloadEventBean.startDownload}" value="#{msgs.event_download_button}"  rendered="#{DownloadEventBean.meetingsAvailable}"/>
+						<h:commandButton id="downloadEventsXls"  action="#{DownloadEventBean.startXlsDownload}" value="#{msgs.event_download_xls_button}"  rendered="#{DownloadEventBean.meetingsAvailable}"/>
+						<h:commandButton id="downloadEventsCsv"  action="#{DownloadEventBean.startCsvDownload}" value="#{msgs.event_download_csv_button}"  rendered="#{DownloadEventBean.meetingsAvailable && DownloadEventBean.csvExportEnabled && DownloadEventBean.currentUserAllowedUpdateSite}"/>
 						<h:outputText value="&nbsp;&nbsp;&nbsp;" escape="false"/>
 						<h:commandButton id="goToMain" action="listMeetings" value="Back"  />
 					</h:panelGroup>
@@ -346,7 +369,17 @@
 						inputTags[i].checked = value;					
 				}
 
-			}			
+			}
+			
+			// find all of the sub meetings and check each one
+			// no uncheck here as wel want to allow the individual check of the parent meeting
+			function checkAllRecurring(recurRowId, total) {
+				var i=0;
+				while (i<total){					
+					jQuery('.'+recurRowId+'_' +i).attr('checked', true);
+					i++;
+				}
+			}
 
 		</script>
 	</f:verbatim>

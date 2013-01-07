@@ -20,7 +20,8 @@
 			
 		<h:form id="signupMeeting">
 			<sakai:tool_bar>
-				<sakai:tool_bar_item id="skTbar23" value="#{msgs.event_pageTop_link_for_download}" action="#{DownloadEventBean.downloadOneEvent}" />
+				<sakai:tool_bar_item id="download_xls" value="#{msgs.event_pageTop_link_for_download_xls}" action="#{DownloadEventBean.downloadOneEventAsExcel}" />
+				<sakai:tool_bar_item id="download_csv" value="#{msgs.event_pageTop_link_for_download_csv}" action="#{DownloadEventBean.downloadOneEventAsCsv}" rendered="#{DownloadEventBean.csvExportEnabled && DownloadEventBean.currentUserAllowedUpdateSite}"/>
 				<h:outputLink id="print" value="javascript:window.print();" style="vertical-align:bottom;">
 					<h:graphicImage url="/images/printer.png"
 							alt="#{msgs.print_friendly}" title="#{msgs.print_friendly}" />
@@ -30,14 +31,12 @@
 		</h:form>
 		
 		<sakai:view_content>
-			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}"
+			<h:outputText value="#{msgs.event_error_alerts} #{messageUIBean.errorMessage}"
 				styleClass="alertMessage" escape="false"
-				rendered="#{errorMessageUIBean.error}" />
+				rendered="#{messageUIBean.error}" />
 
 			<h:form id="meeting">
 				<sakai:view_title value="#{msgs.event_participant_view_page_title}" />
-
-				<sakai:messages />
 
 				<%-- show title only when collapsed --%>
 				<h:panelGrid id="showMeetingTitleOnly" columns="2" columnClasses="titleColumn,valueColumn" styleClass="orgShowTitleOnly">
@@ -103,6 +102,13 @@
 										<f:convertDateTime dateStyle="long"/>
 								</h:outputText>	
 							</h:panelGroup>	
+							
+							<!-- iCalendar link, only rendered for attendees if it is a 'no signup required/announcement' meeting -->
+							<h:outputText value="#{msgs.event_icalendar_link}" styleClass="titleText" escape="false" rendered="#{AttendeeSignupMBean.icsEnabled && AttendeeSignupMBean.meetingWrapper.meeting.meetingType =='announcement'}"/>
+							<h:commandLink id="mICS" action="#{AttendeeSignupMBean.downloadICSForMeeting}" rendered="#{AttendeeSignupMBean.icsEnabled && AttendeeSignupMBean.meetingWrapper.meeting.meetingType =='announcement'}">
+								<h:graphicImage value="/images/calendar_add.png" alt="#{msgs.label_ics}" title="#{msgs.label_download_ics_meeting}" style="margin-right: 5px;" />
+								<h:outputText value="#{msgs.event_icalendar_label}"/>
+							</h:commandLink>
 		
 							<h:outputText id="noAnnouncement107" value="#{msgs.event_signup_start}" style="white-space: nowrap;" styleClass="titleText" rendered="#{!AttendeeSignupMBean.announcementType}" escape="false"/>
 							<h:panelGroup id="noAnnouncemnt108" rendered="#{!AttendeeSignupMBean.announcementType}">
@@ -303,17 +309,21 @@
 						<f:facet name="header">
 							<h:outputText value="#{msgs.tab_event_your_status}" escape="false"/>
 						</f:facet>
-						<h:outputText value="#{msgs.event_sign_up}"
-							title="#{msgs.event_tool_tip_you_signed_up}"
-							rendered="#{timeSlotWrapper.currentUserSignedUp}"
-							styleClass="attendee_status" />
+						<h:panelGroup rendered="#{timeSlotWrapper.currentUserSignedUp}">
+							<h:outputText value="#{msgs.event_sign_up}"
+								title="#{msgs.event_tool_tip_you_signed_up}"
+								styleClass="attendee_status" />
+							<h:commandLink id="tsICS" action="#{AttendeeSignupMBean.downloadICSForTimeslot}" rendered="#{AttendeeSignupMBean.icsEnabled}">
+								<h:graphicImage value="/images/calendar_add.png" alt="#{msgs.label_ics}" title="#{msgs.label_download_ics_timeslot}" style="margin-left: 5px;" />
+							</h:commandLink>
+						</h:panelGroup>
 						<h:outputText value="#{msgs.event_on_waiting_list}"
 							title="#{msgs.event_tool_tip_you_ranking_num} #{timeSlotWrapper.rankingOnWaiting}"
 							rendered="#{timeSlotWrapper.currentUserOnWaitingList}"
 							styleClass="attendee_status" />
 					</h:column>
 
-					<h:column rendered="#{!AttendeeSignupMBean.meetingWrapper.meeting.meetingExpired && AttendeeSignupMBean.meetingWrapper.meeting.permission.attend}">
+					<h:column rendered="#{!AttendeeSignupMBean.meetingWrapper.meeting.meetingExpired && AttendeeSignupMBean.meetingWrapper.meeting.permission.attend && !AttendeeSignupMBean.meetingWrapper.meeting.passedDeadline}">
 						<f:facet name="header">
 							<h:outputText value="#{msgs.tab_event_action}" escape="false"/>
 						</f:facet>

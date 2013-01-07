@@ -455,7 +455,7 @@ table.instruction td.desc{
 	
 }
 
-.expandAllRecurMeetings {
+.padLeft {
 	margin-left: 30px;
 	text-align: left;
 }
@@ -525,4 +525,9 @@ table.emailTable td.valueColumn {
 	position:absolute;
 	right:5px;
 	top:50px;
+}
+
+.dateExact {
+	color: #888;
+	margin-left: 10px;
 }

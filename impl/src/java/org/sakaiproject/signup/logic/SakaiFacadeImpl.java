@@ -23,17 +23,22 @@
 package org.sakaiproject.signup.logic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.Member;
 import org.sakaiproject.authz.api.Role;
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarService;
@@ -188,6 +193,14 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	public void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
 		this.serverConfigurationService = serverConfigurationService;
 	}
+	
+	private AuthzGroupService authzGroupService;
+	public AuthzGroupService getAuthzGroupService() {
+		return authzGroupService;
+	}
+	public void setAuthzGroupService(AuthzGroupService authzGroupService) {
+		this.authzGroupService=authzGroupService;
+	}
 
 	/**
 	 * regist all the permission levels, which Signup Tool required. Place any
@@ -226,11 +239,7 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	}
 
 	/**
-	 * get the User object
-	 * 
-	 * @param userId
-	 *            a sakai internal user Id
-	 * @return an User object
+	 * {@inheritDoc}
 	 */
 	public User getUser(String userId) {
 		try {
@@ -239,6 +248,33 @@ public class SakaiFacadeImpl implements SakaiFacade {
 			log.warn("Cannot get user for id: " + userId);
 			return null;
 		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public User getUserQuietly(String userId) {
+		try {
+			return userDirectoryService.getUser(userId);
+		} catch (UserNotDefinedException e) {
+			log.debug("User with id: " + userId + " does not exist : " + e.getClass() + " : " + e.getMessage());
+			return null;
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean checkForUser(String userId) {
+		try {
+			User u = userDirectoryService.getUser(userId);
+			if (u != null) {
+				return true;
+			} 
+		} catch (UserNotDefinedException e) {
+			log.debug("User with id: " + userId + " does not exist : " + e.getClass() + " : " + e.getMessage());
+		}
+		return false;
 	}
 
 	/**
@@ -400,6 +436,13 @@ public class SakaiFacadeImpl implements SakaiFacade {
 				Collection tmpGroup = element.getGroups();
 				for (Iterator iterator = tmpGroup.iterator(); iterator.hasNext();) {
 					Group grp = (Group) iterator.next();
+										
+					//signup-51 don't show the hidden groups (if property exists, skip this group)
+					String gProp = grp.getProperties().getProperty(GROUP_PROP_SIGNUP_IGNORE);
+    				if (gProp != null && gProp.equals(Boolean.TRUE.toString())) {
+    					continue;
+    				}
+    				    				
 					SignupGroup sgrp = new SignupGroup();
 					sgrp.setGroupId(grp.getId());
 					sgrp.setTitle(grp.getTitle());
@@ -462,6 +505,44 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		return new ArrayList<SignupUser>(signupUsers);
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	@SuppressWarnings("unchecked")
+	public List<SignupUser> getAllPossibleAttendees(SignupMeeting meeting){
+		List<SignupSite> signupSites = meeting.getSignupSites();
+		Set<SignupUser> signupUsers = new TreeSet<SignupUser>();
+		for (SignupSite signupSite : signupSites) {
+			if (signupSite.isSiteScope()) {
+				getAttendeesForSiteWithSiteScope(signupUsers, signupSite);
+			} else {
+				List<SignupGroup> signupGroups = signupSite.getSignupGroups();
+				for (SignupGroup signupGroup : signupGroups) {
+					getAttendeesForGroup(signupUsers, signupSite, signupGroup);
+				}
+			}
+
+		}
+		return new ArrayList<SignupUser>(signupUsers);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@SuppressWarnings("unchecked")
+	public List<SignupUser> getAllPossbileCoordinators(SignupMeeting meeting) {
+		List<SignupUser> coordinators = new ArrayList<SignupUser>();
+		List<SignupUser> signUpUsers = getAllUsers(meeting);
+		for (SignupUser u : signUpUsers) {
+			if(hasPermissionToCreate(meeting,u.getInternalUserId())){
+				coordinators.add(u);
+			}
+			
+		}
+		
+		return coordinators;
+	}
+	
 	
 	/**
 	 * {@inheritDoc}
@@ -517,6 +598,27 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		
 		return signupUser;
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<User> getUsersWithPermission(String permission) {
+		
+		try {
+			//current site
+			Site currentSite = siteService.getSite(getCurrentLocationId());
+		
+			//get userids with permission in this site/azg
+			Set<String> usersWithPermission = authzGroupService.getUsersIsAllowed(permission, Collections.singletonList(currentSite.getReference()));
+		
+			//get Users
+			return  userDirectoryService.getUsers(usersWithPermission);
+		} catch (Exception e) {
+			log.error("getUsersWithPermission exception: " + e.getClass() + ":" + e.getMessage());
+		}
+		return Collections.EMPTY_LIST;
+	}
+
 		
 	private boolean hasPermissionToAttend(SignupSite site, String userId){
 		if(isAllowedSite(userId, SIGNUP_ATTEND_ALL, site.getSiteId()))
@@ -530,6 +632,31 @@ public class SakaiFacadeImpl implements SakaiFacade {
 			for (SignupGroup group : signupGroups) {
 				if(isAllowedGroup(userId, SIGNUP_ATTEND, site.getSiteId(), group.getGroupId()))
 					return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public boolean hasPermissionToCreate(SignupMeeting meeting, String userId){
+		
+		List<SignupSite> signupSites = meeting.getSignupSites();
+		if(signupSites !=null){
+			for (SignupSite site : signupSites) {			
+				if(isAllowedSite(userId, SIGNUP_CREATE_SITE, site.getSiteId()))
+					return true;
+			
+				if (site.isSiteScope()) {
+					if (isAllowedSite(userId, SIGNUP_CREATE_SITE, site.getSiteId()))
+						return true;
+				} else {
+					List<SignupGroup> signupGroups = site.getSignupGroups();
+					for (SignupGroup group : signupGroups) {
+						if(isAllowedGroup(userId, SIGNUP_CREATE_GROUP_ALL, site.getSiteId(), group.getGroupId()) || isAllowedGroup(userId, SIGNUP_CREATE_GROUP, site.getSiteId(), group.getGroupId()))
+							return true;
+					}
+				}
+			
 			}
 		}
 		
@@ -589,7 +716,46 @@ public class SakaiFacadeImpl implements SakaiFacade {
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedGroup(member.getUserId(), SIGNUP_VIEW, site.getId(), group.getId()) || isAllowedSite(
 							member.getUserId(), SIGNUP_VIEW_ALL, site.getId()))) {
-				User user = getUser(member.getUserId());
+				User user = getUserQuietly(member.getUserId());
+				if (user == null) {
+					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
+					/* will not add into the dropDown list
+					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
+							member.getRole(), site.getId(), site.isPublished());
+					processAddOrUpdateSignupUsers(signupUsers, signupUser);
+					*/
+					continue;
+				}
+
+				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
+						.getLastName(), member.getRole(), site.getId(), site.isPublished());
+				processAddOrUpdateSignupUsers(signupUsers, signupUser);
+				// comment: member.getUserDisplayId() not used
+			}
+		}
+	}
+	
+	/* get all users in a specific group */
+	@SuppressWarnings("unchecked")
+	private void getAttendeesForGroup(Set<SignupUser> signupUsers, SignupSite signupSite, SignupGroup signupGroup) {
+		Site site = null;
+		try {
+			site = siteService.getSite(signupSite.getSiteId());
+		} catch (IdUnusedException e) {
+			log.error("Cannot get the info about siteId: " + e.getMessage());
+			return;
+		}
+		Group group = site.getGroup(signupGroup.getGroupId());
+		if (group == null)
+			return;
+		Set<Member> members = group.getMembers();
+		SignupUser signupUser = null;
+		for (Member member : members) {
+			if (member.isActive()
+					&& (hasPredefinedViewPermisson(member)
+							|| isAllowedGroup(member.getUserId(), SIGNUP_ATTEND, site.getId(), group.getId()) || isAllowedSite(
+							member.getUserId(), SIGNUP_ATTEND_ALL, site.getId()))) {
+				User user = getUserQuietly(member.getUserId());
 				if (user == null) {
 					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
 					/* will not add into the dropDown list
@@ -636,7 +802,47 @@ public class SakaiFacadeImpl implements SakaiFacade {
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedSite(member.getUserId(), SIGNUP_VIEW, site.getId()) || isAllowedSite(member
 							.getUserId(), SIGNUP_VIEW_ALL, site.getId()))) {
-				User user = getUser(member.getUserId());
+				User user = getUserQuietly(member.getUserId());
+				if (user == null) {
+					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
+					/* will not add into the dropDown list
+					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
+							member.getRole(), site.getId(), site.isPublished());
+					processAddOrUpdateSignupUsers(signupUsers, signupUser);
+					*/
+					continue;
+				}
+
+				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
+						.getLastName(), member.getRole(), site.getId(), site.isPublished());
+				processAddOrUpdateSignupUsers(signupUsers, signupUser);
+
+			}
+		}
+	}
+	
+	/* get all users in a site */
+	@SuppressWarnings("unchecked")
+	private void getAttendeesForSiteWithSiteScope(Set<SignupUser> signupUsers, SignupSite signupSite) {
+		Site site = null;
+		try {
+			site = siteService.getSite(signupSite.getSiteId());
+		} catch (IdUnusedException e) {
+			log.error(e.getMessage(), e);
+		}
+
+		if (site == null)
+			return;
+
+		SignupUser signupUser = null;
+		Set<Member> members = site.getMembers();
+		for (Member member : members) {
+			if (member.isActive()
+					&& (hasPredefinedViewPermisson(member)
+							|| isAllowedSite(member.getUserId(), SIGNUP_ATTEND, site.getId()) || isAllowedSite(member
+							.getUserId(), SIGNUP_ATTEND_ALL, site.getId()) || isAllowedSite(member
+									.getUserId(), SIGNUP_UPDATE_SITE, site.getId()))) {
+				User user = getUserQuietly(member.getUserId());
 				if (user == null) {
 					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
 					/* will not add into the dropDown list
@@ -745,6 +951,392 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	 */
 	public void setContentHostingService(ContentHostingService contentHostingService) {
 		this.contentHostingService = contentHostingService;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<User> getUsersByEmail(String email) {
+		return (List<User>)userDirectoryService.findUsersByEmail(email);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public User getUserByEmail(String email) {
+		
+		List<User> users =  (List<User>)userDirectoryService.findUsersByEmail(email);
+		
+		if(users.isEmpty()) {
+			return null;
+		}
+		
+		return users.get(0);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public User getUserByEid(String eid) {
+		try {
+			return userDirectoryService.getUserByEid(eid);
+		} catch (UserNotDefinedException e) {
+			log.debug("User with eid: " + eid + " does not exist.");
+		}
+		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean isCsvExportEnabled() {
+		return serverConfigurationService.getBoolean("signup.csv.export.enabled", false);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+    public SecurityAdvisor pushAllowCalendarEdit() {
+        SecurityAdvisor advisor = new SecurityAdvisor() {
+            public SecurityAdvice isAllowed(String userId, String function, String reference) {
+                if(CalendarService.AUTH_MODIFY_CALENDAR_ANY.equals(function)) {
+                    return SecurityAdvice.ALLOWED;
+                } else {
+                    return SecurityAdvice.NOT_ALLOWED;
+                }
+            }
+        };
+
+        enableSecurityAdvisor(advisor);
+
+        return advisor;
+    }
+    
+    /**
+	 * {@inheritDoc}
+	 */
+    public SecurityAdvisor pushSecurityAdvisor() {
+        SecurityAdvisor advisor = new SecurityAdvisor() {
+            public SecurityAdvice isAllowed(String userId, String function, String reference) {
+                return SecurityAdvice.ALLOWED;
+            }
+        };
+
+        enableSecurityAdvisor(advisor);
+
+        return advisor;
+    }
+
+	/**
+	 * {@inheritDoc}
+	 */
+    public void popSecurityAdvisor(SecurityAdvisor advisor) {
+        disableSecurityAdvisor(advisor);
+    }
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public String createGroup(String siteId, String title, String description, List<String> userUuids) {
+				
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("createGroup failed for site: " + site.getId(), e);
+            return null;
+		}
+							
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+				
+		try {
+			
+			//add new group
+			Group group=site.addGroup();
+			
+			group.setTitle(GROUP_PREFIX + title);
+	        group.setDescription(description);   
+	        
+	        //set this property so the groups shows in site info
+		    group.getProperties().addProperty(GROUP_PROP_SITEINFO_VISIBLE, Boolean.TRUE.toString());
+		    
+		    //set this so the group does not show in the list of groups in signups
+		    //SIGNUP-182 allow groups to be normal groups, ie dont set this property
+		    //group.getProperties().addProperty(GROUP_PROP_SIGNUP_IGNORE, Boolean.TRUE.toString());
+
+		    
+		    if(userUuids != null) {
+		    	group.removeMembers();
+		    			    	
+		    	for(String userUuid: userUuids) {
+		    		group = addUserToGroup(userUuid, group);
+		    	}
+		    }
+	   		    
+		    // save the changes
+			siteService.save(site);
+			
+			return group.getId();
+			
+		} catch (Exception e) {
+        	log.error("createGroup failed for site: " + site.getId(), e);
+        } finally {
+        	disableSecurityAdvisor(securityAdvisor);
+        }
+		
+		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean addUsersToGroup(Collection<String> userIds, String siteId, String groupId) {
+		
+		log.debug("addUsersToGroup(userIds=" + Arrays.asList(userIds).toString() + ", siteId=" + siteId + ", groupId=" + groupId);
+		
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("addUserToGroup failed to retrieve site: " + siteId, e);
+            return false;
+		}
+							
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+		
+		Group group = site.getGroup(groupId);
+		
+		if(group == null) {
+        	log.error("No group for id: " + groupId);
+			return false;
+		}
+		
+		try {
+			
+			for(String userId: userIds) {
+				group = addUserToGroup(userId, group);
+			}
+			siteService.save(site);
+			
+			return true;
+			
+		} catch (Exception e) {
+        	log.error("addUsersToGroup failed for users: " + Arrays.asList(userIds).toString() + " and group: " + groupId, e);
+        } finally {
+        	disableSecurityAdvisor(securityAdvisor);
+        }
+		
+		return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean synchonizeGroupTitle(String siteId, String groupId, String newTitle){
+		Site site = null;
+		boolean changed = false;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("synchronizeGroup failed to retrieve site: " + siteId, e);
+            return false;
+		}
+							
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+		
+		Group group = site.getGroup(groupId);
+		
+		if(group == null) {
+        	log.error("No group for id: " + groupId);
+			return false;
+		}
+		
+		try {
+			
+			if(group.getTitle().startsWith(GROUP_PREFIX)){
+				//it means that the group title has not been modified via Site-info, we can change it now				
+				group.setTitle(GROUP_PREFIX + newTitle);
+				siteService.save(site);
+				changed = true;
+			}
+			else if(group.getTitle().contains(newTitle)){
+				//it is already changed due to version-multiple-try-saving process
+				//Don't do anything this time.
+				changed = true;
+			}
+			
+		} catch (Exception e) {
+        	log.error("synchGroupTitle failed for group: " + group.getTitle() + " and group: " + groupId, e);
+        } finally {
+        	disableSecurityAdvisor(securityAdvisor);
+        }
+		return changed;
+	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean removeUserFromGroup(String userId, String siteId, String groupId) {
+		
+		log.debug("removeUserFromGroup(userId=" + userId + ", siteId=" + siteId + ", groupId=" + groupId);
+		
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("removeUserFromGroup failed to retrieve site: " + siteId, e);
+            return false;
+		}
+							
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+		
+		Group group = site.getGroup(groupId);
+		
+		try {
+			group.removeMember(userId);
+			siteService.save(site);
+			
+			return true;
+			
+		} catch (Exception e) {
+        	log.error("removeUserFromGroup failed for user: " + userId + " and group: " + groupId, e);
+        } finally {
+        	disableSecurityAdvisor(securityAdvisor);
+        }
+		
+		return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<String> getGroupMembers(String siteId, String groupId) {
+		
+		List<String> users = new ArrayList<String>();
+		
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("getGroupMembers failed to retrieve site: " + siteId, e);
+            return users;
+		}
+							
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+		
+		try {
+			Group group = site.getGroup(groupId);
+			Set<Member> members = group.getMembers();
+		
+			for(Member m: members) {
+				users.add(m.getUserId());
+				log.error("Added user: " + m.getUserId() + " to group: " + groupId);
+			}
+			return users;
+		} catch (Exception e) {
+        	log.error("getGroupMembers failed for site: " + siteId + " and group: " + groupId, e);
+        } finally {
+        	disableSecurityAdvisor(securityAdvisor);
+        }
+		
+		return users;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean checkForGroup(String siteId, String groupId) {
+		
+		log.debug("checkForGroup: siteId=" + siteId + ", groupId=" + groupId);
+		
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (Exception e) {
+			log.error("checkForGroup failed to retrieve site: " + siteId, e);
+            return false;
+		}
+		
+		/*
+		SecurityAdvisor securityAdvisor = new SecurityAdvisor(){
+			public SecurityAdvice isAllowed(String userId, String function, String reference){
+				return SecurityAdvice.ALLOWED;
+			}
+		};
+		enableSecurityAdvisor(securityAdvisor);
+		*/
+		
+		Group group = site.getGroup(groupId);
+		
+		if(group != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Helper to add a user to a group. THIS DOES NOT SAVE ANYTHING. It is merely a helper to add the user to the group object and return it.
+	 * 
+	 * @param userUuid	uuid of user
+	 * @param group		Group obj
+	 * @return
+	 */
+	private Group addUserToGroup(String userUuid, Group group) {
+		
+		Site site = group.getContainingSite();
+		
+		//same logic as in site-manage
+		Role r = site.getUserRole(userUuid);
+		Member m = site.getMember(userUuid);
+		Role memberRole = m != null ? m.getRole() : null;
+		
+		//Each user should be marked as non provided
+		//Get role first from site definition. 
+		//However, if the user is inactive, getUserRole would return null; then use member role instead
+		group.addMember(userUuid, r != null ? r.getId() : memberRole != null? memberRole.getId() : "", m != null ? m.isActive() : true, false);
+		
+		return group;
+	}
+		
+	/**
+	 * Setup the security advisor for this transaction
+	 */
+	private void enableSecurityAdvisor(SecurityAdvisor securityAdvisor) {
+		securityService.pushAdvisor(securityAdvisor);
+	}
+
+	/**
+	 * Remove security advisor from the stack
+	 */
+	private void disableSecurityAdvisor(SecurityAdvisor securityAdvisor){
+		securityService.popAdvisor(securityAdvisor);
 	}
 
 }

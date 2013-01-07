@@ -31,6 +31,7 @@ import javax.faces.component.UIInput;
 import javax.faces.model.SelectItem;
 import javax.faces.model.SelectItemGroup;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.LogFactoryImpl;
 import org.sakaiproject.exception.IdUnusedException;
@@ -73,12 +74,12 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 
 	private UIInput attendeeTimeSlotWithId;
 
-	private UIInput replacedAttendeeEid;
+	private UIInput replacedAttendeeEidOrEmail;
 
 	/* proxy param for eid by user input */
-	private String eidInputByUser;
+	private String eidOrEmailByUser;
 
-	private UIInput waiterEid;
+	private UIInput waiterEidOrEmail;
 
 	private UIData attendeeWrapperTable;
 
@@ -100,7 +101,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 
 	private boolean addNewAttendee;
 
-	private UIInput addNewAttendeeUserEid;
+	private UIInput addNewAttendeeUserEidOrEmail;
 
 	private UIInput listPendingType;
 
@@ -152,6 +153,9 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 		if(!isEidInputMode() && (getAllAttendees()==null || getAllAttendees().isEmpty())){
 			loadAllAttendees(meetingWrapper.getMeeting());
 		}
+		
+		//reset email checkBox value setting
+		this.sendEmail = meetingWrapper.getMeeting().isSendEmailByOwner();
 
 	}
 
@@ -201,7 +205,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			Utilities.addErrorMessage(ue.getMessage());
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		return updateMeetingwrapper(meeting, ORGANIZER_MEETING_PAGE_URL);
@@ -314,7 +318,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			}
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		return updateMeetingwrapper(meeting, ORGANIZER_MEETING_PAGE_URL);
@@ -338,9 +342,9 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 					signupEventTrackingInfo = replaceAttendee();
 				} catch (UserNotDefinedException e) {
 					logger.warn(Utilities.rb.getString("exception.no.such.user")
-							+ (String) replacedAttendeeEid.getValue() + " -- " + e.getMessage());
+							+ (String) replacedAttendeeEidOrEmail.getValue() + " -- " + e.getMessage());
 					Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user")
-							+ (String) replacedAttendeeEid.getValue());
+							+ (String) replacedAttendeeEidOrEmail.getValue());
 					return "";
 				}
 			}
@@ -363,7 +367,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		/* reset */
@@ -391,16 +395,23 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	}
 
 	private SignupEventTrackingInfo replaceAttendee() throws Exception {
-		String userEid = null;
-		if (isEidInputMode())
-			userEid = getEidInputByUser();
-		else
-			userEid = (String) replacedAttendeeEid.getValue();
-
-		String replacerUserId = sakaiFacade.getUserId(userEid);
+		String userEidOrEmail = null;
+		if (isEidInputMode()) {
+			userEidOrEmail = getEidOrEmailInputByUser();
+		} else {
+			userEidOrEmail = (String) replacedAttendeeEidOrEmail.getValue();
+		}
+		
+		//check if there are multiple email addresses associated with input
+		List<String> associatedEids = getEidsForEmail(userEidOrEmail.trim());
+		if(associatedEids.size() > 1) {
+			throw new SignupUserActionException(MessageFormat.format(Utilities.rb.getString("exception.multiple.eids"), new Object[] {userEidOrEmail, StringUtils.join(associatedEids, ", ")}));
+		}
+		
+		String replacerUserId = getUserIdForEidOrEmail(userEidOrEmail);
 		SignupUser replSignUser = getSakaiFacade().getSignupUser(getMeetingWrapper().getMeeting(), replacerUserId);
 		if(replSignUser ==null){
-			throw new SignupUserActionException(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {userEid}));
+			throw new SignupUserActionException(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {userEidOrEmail}));
 		}
 		
 		TimeslotWrapper wrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
@@ -460,7 +471,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			e.printStackTrace();
 		}
 		
-		this.allSignupUsers = sakaiFacade.getAllUsers(meeting);
+		this.allSignupUsers = sakaiFacade.getAllPossibleAttendees(meeting);
 		/*
 		 * due to efficiency, user has to input EID instead of using dropdown
 		 * user name list
@@ -528,11 +539,13 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 		for (TimeslotWrapper wrapper : timeslotWrapperList) {
 			String grpLabel = wrapper.getLabel();
 			List<SelectItem> attendeeOnTS = new ArrayList<SelectItem>();
-			List<SignupAttendee> Attendees = wrapper.getTimeSlot().getAttendees();
-			if (Attendees != null && !Attendees.isEmpty()) {
-				for (SignupAttendee att : Attendees) {
-					SelectItem sItem = new SelectItem(wrapper.getTimeSlot().getId() + DELIMITER
-							+ att.getAttendeeUserId(), sakaiFacade.getUserDisplayName(att.getAttendeeUserId()));
+			
+			//clean the list of attendees
+			List<SignupAttendee> attendees = getValidAttendees(wrapper.getTimeSlot().getAttendees());
+			
+			if (attendees != null && !attendees.isEmpty()) {
+				for (SignupAttendee att : attendees) {
+					SelectItem sItem = new SelectItem(wrapper.getTimeSlot().getId() + DELIMITER + att.getAttendeeUserId(), sakaiFacade.getUserDisplayName(att.getAttendeeUserId()));
 					attendeeOnTS.add(sItem);
 				}
 			}
@@ -570,12 +583,12 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 		this.attendeeTimeSlotWithId = attendeeEid;
 	}
 
-	public UIInput getWaiterEid() {
-		return waiterEid;
+	public UIInput getWaiterEidOrEmail() {
+		return waiterEidOrEmail;
 	}
 
-	public void setWaiterEid(UIInput waiterEid) {
-		this.waiterEid = waiterEid;
+	public void setWaiterEidOrEmail(UIInput waiterEidOrEmail) {
+		this.waiterEidOrEmail = waiterEidOrEmail;
 	}
 
 	public String prepareAddAttendee() {
@@ -593,28 +606,35 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	public String addAttendee() {
 		TimeslotWrapper timeslotWrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
 
-		String newAttendeeEid = null;
-		if (isEidInputMode())
-			newAttendeeEid = getEidInputByUser();
-		else {
-			if (addNewAttendeeUserEid != null && ((String) addNewAttendeeUserEid.getValue()).trim().length() > 0)
-				newAttendeeEid = ((String) addNewAttendeeUserEid.getValue()).trim();
+		String newAttendeeEidOrEmail = null;
+		if (isEidInputMode()) {
+			newAttendeeEidOrEmail = getEidOrEmailInputByUser();
+		} else {
+			if (addNewAttendeeUserEidOrEmail != null && ((String) addNewAttendeeUserEidOrEmail.getValue()).trim().length() > 0) {
+				newAttendeeEidOrEmail = ((String) addNewAttendeeUserEidOrEmail.getValue()).trim();
+			}
 		}
 
-		if (newAttendeeEid == null || newAttendeeEid.trim().length() < 1)
+		if (StringUtils.isBlank(newAttendeeEidOrEmail)) {
 			return ORGANIZER_MEETING_PAGE_URL;
+		}
+		
+		//check if there are multiple email addresses associated with input
+		List<String> associatedEids = getEidsForEmail(newAttendeeEidOrEmail.trim());
+		if(associatedEids.size() > 1) {
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("exception.multiple.eids"), new Object[] {newAttendeeEidOrEmail, StringUtils.join(associatedEids, ", ")}));
+			return ORGANIZER_MEETING_PAGE_URL;
+		}
 
-		String newUserId;
-		try {
-			newUserId = sakaiFacade.getUserId(newAttendeeEid.trim());
-		} catch (UserNotDefinedException e) {
-			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + newAttendeeEid);
+		String newUserId = getUserIdForEidOrEmail(newAttendeeEidOrEmail.trim());
+		if(StringUtils.isBlank(newUserId)){
+			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + newAttendeeEidOrEmail);
 			return ORGANIZER_MEETING_PAGE_URL;
 		}
 		
 		SignupUser newAttendeeSignUser = getSakaiFacade().getSignupUser(getMeetingWrapper().getMeeting(), newUserId);
 		if(newAttendeeSignUser ==null){
-			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {newAttendeeEid}));
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {newAttendeeEidOrEmail}));
 			return ORGANIZER_MEETING_PAGE_URL;
 		}
 
@@ -641,7 +661,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		String nextPage = updateMeetingwrapper(meeting, ORGANIZER_MEETING_PAGE_URL);
@@ -661,7 +681,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	 */
 	public String cancelAddAttendee() {
 		setAddNewAttendee(false);
-		setAddNewAttendeeUserEid(null);
+		setAddNewAttendeeUserEidOrEmail(null);
 
 		return ORGANIZER_MEETING_PAGE_URL;
 	}
@@ -694,7 +714,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			Utilities.addErrorMessage(ue.getMessage());
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		/*
@@ -716,28 +736,34 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	public String addAttendeeToWList() {
 		TimeslotWrapper timeslotWrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
 
-		String newWaiterEid = null;
-		if (isEidInputMode())
-			newWaiterEid = getEidInputByUser();
-		else {
-			if (getWaiterEid() != null && ((String) getWaiterEid().getValue()).trim().length() > 0)
-				newWaiterEid = ((String) getWaiterEid().getValue()).trim();
+		String newWaiterEidOrEmail = null;
+		if (isEidInputMode()) {
+			newWaiterEidOrEmail = getEidOrEmailInputByUser();
+		} else {
+			if (waiterEidOrEmail != null && ((String) waiterEidOrEmail.getValue()).trim().length() > 0)
+				newWaiterEidOrEmail = ((String) waiterEidOrEmail.getValue()).trim();
 		}
 
-		if (newWaiterEid == null || newWaiterEid.trim().length() < 1)
-			return ORGANIZER_MEETING_PAGE_URL;
-
-		String waiterUserId;
-		try {
-			waiterUserId = sakaiFacade.getUserId(newWaiterEid.trim());
-		} catch (UserNotDefinedException e) {
-			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + newWaiterEid);
-			logger.warn(Utilities.rb.getString("exception.no.such.user") + newWaiterEid + "  -- " + e.getMessage());
+		if (StringUtils.isBlank(newWaiterEidOrEmail)) {
 			return ORGANIZER_MEETING_PAGE_URL;
 		}
+		
+		//check if there are multiple email addresses associated with input
+		List<String> associatedEids = getEidsForEmail(newWaiterEidOrEmail.trim());
+		if(associatedEids.size() > 1) {
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("exception.multiple.eids"), new Object[] {newWaiterEidOrEmail, StringUtils.join(associatedEids, ", ")}));
+			return ORGANIZER_MEETING_PAGE_URL;
+		}
+		
+		String waiterUserId = getUserIdForEidOrEmail(newWaiterEidOrEmail.trim());
+		if(StringUtils.isBlank(waiterUserId)){
+			Utilities.addErrorMessage(Utilities.rb.getString("exception.no.such.user") + newWaiterEidOrEmail);
+			return ORGANIZER_MEETING_PAGE_URL;
+		}
+		
 		SignupUser waiterSignUser = getSakaiFacade().getSignupUser(getMeetingWrapper().getMeeting(), waiterUserId);
 		if(waiterSignUser ==null){
-			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {newWaiterEid}));
+			Utilities.addErrorMessage(MessageFormat.format(Utilities.rb.getString("user.has.no.permission.attend"), new Object[] {newWaiterEidOrEmail}));
 			return ORGANIZER_MEETING_PAGE_URL;
 		}
 		
@@ -754,7 +780,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			Utilities.addErrorMessage(ue.getMessage());
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		// TODO calendar event id;
@@ -776,9 +802,9 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 		TimeslotWrapper timeslotWrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
 		String removedUserId = (String) Utilities.getRequestParam(ATTENDEE_USER_ID);
 
-		if (removedUserId == null || removedUserId.trim().length() < 1)
+		if (StringUtils.isBlank(removedUserId)) {
 			return ORGANIZER_MEETING_PAGE_URL;
-
+		}
 		SignupAttendee removedWaiter = new SignupAttendee(removedUserId, currentSiteId());
 		SignupMeeting meeting = null;
 
@@ -791,7 +817,7 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 			Utilities.addErrorMessage(ue.getMessage());
 		} catch (Exception e) {
 			logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage());
-			Utilities.addMessage(Utilities.rb.getString("error.occurred_try_again"));
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
 		}
 
 		return updateMeetingwrapper(meeting, ORGANIZER_MEETING_PAGE_URL);
@@ -950,8 +976,8 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	 * 
 	 * @return an UIInput object.
 	 */
-	public UIInput getReplacedAttendeeEid() {
-		return replacedAttendeeEid;
+	public UIInput getReplacedAttendeeEidOrEmail() {
+		return replacedAttendeeEidOrEmail;
 	}
 
 	/**
@@ -960,8 +986,8 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	 * @param replacedAttendeeEid
 	 *            an UIInput object.
 	 */
-	public void setReplacedAttendeeEid(UIInput replacedAttendeeEid) {
-		this.replacedAttendeeEid = replacedAttendeeEid;
+	public void setReplacedAttendeeEidOrEmail(UIInput replacedAttendeeEidOrEmail) {
+		this.replacedAttendeeEidOrEmail = replacedAttendeeEidOrEmail;
 	}
 
 	/**
@@ -1005,18 +1031,18 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	 * 
 	 * @return am UIInput object.
 	 */
-	public UIInput getAddNewAttendeeUserEid() {
-		return addNewAttendeeUserEid;
+	public UIInput getAddNewAttendeeUserEidOrEmail() {
+		return addNewAttendeeUserEidOrEmail;
 	}
 
 	/**
 	 * This is a setter.
 	 * 
-	 * @param addNewAttendeeUserEid
-	 *            an attendee's Eid string.
+	 * @param addNewAttendeeUserEidOrEmail
+	 *            an attendee's Eid or email string.
 	 */
-	public void setAddNewAttendeeUserEid(UIInput addNewAttendeeUserEid) {
-		this.addNewAttendeeUserEid = addNewAttendeeUserEid;
+	public void setAddNewAttendeeUserEidOrEmail(UIInput addNewAttendeeUserEidOrEmail) {
+		this.addNewAttendeeUserEidOrEmail = addNewAttendeeUserEidOrEmail;
 	}
 
 	/**
@@ -1180,19 +1206,20 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	 * 
 	 * @return empty string.
 	 */
-	public String getUserInputEid() {
+	public String getUserInputEidOrEmail() {
 		return "";
 	}
 
 	/**
 	 * This is a setter.
 	 * 
-	 * @param userInputEid
-	 *            an user input eid value.
+	 * @param value
+	 *            an user input eid or email address value .
 	 */
-	public void setUserInputEid(String userInputEid) {
-		if (userInputEid != null && userInputEid.length() > 1)
-			this.eidInputByUser = userInputEid;
+	public void setUserInputEidOrEmail(String value) {
+		if (StringUtils.isNotBlank(value)) {
+			this.eidOrEmailByUser = value;
+		}
 	}
 
 	/**
@@ -1205,10 +1232,10 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	}
 
 	/* proxy method */
-	private String getEidInputByUser() {
-		String eid = this.eidInputByUser;
-		this.eidInputByUser = null;// reset for only use once
-		return eid;
+	private String getEidOrEmailInputByUser() {
+		String value = this.eidOrEmailByUser;
+		this.eidOrEmailByUser = null;// reset for only use once
+		return value;
 	}
 
 	/**
@@ -1229,5 +1256,119 @@ public class OrganizerSignupMBean extends SignupUIBaseBean {
 	public void setCollapsedMeetingInfo(boolean collapsedMeetingInfo) {
 		this.collapsedMeetingInfo = collapsedMeetingInfo;
 	}
+	
+	
+	/**
+	 * Synchronise the users in a timeslot with the users in a group.
+	 * <p>Ensures that both lists have the same users in each, but does NOT remove any users from the group.
+	 
+	 * @return url to the same page which will trigger a reload
+	 */
+	public String synchroniseGroupMembership() {
+		
+		TimeslotWrapper timeslotWrapper = (TimeslotWrapper) timeslotWrapperTable.getRowData();
+	
+		//get groupId for timeslot
+		String groupId = timeslotWrapper.getGroupId();
+		
+		if(StringUtils.isBlank(groupId)){
+			//TODO. 
+			//Create the group. Grab the list of attendees in the timeslot and add all at once.
+			//Will need to also save the groupId into the timeslot.
+			//For now, we just give a message.
+			
+			Utilities.addErrorMessage(Utilities.rb.getString("error.no_group_for_timeslot"));
+			return ORGANIZER_MEETING_PAGE_URL;
+		} else {
+			List<String> attendeeUserIds = convertAttendeeWrappersToUuids(timeslotWrapper.getAttendeeWrappers());
+			
+			//add timeslot attendees to the group and save
+			if(!sakaiFacade.addUsersToGroup(attendeeUserIds, currentSiteId(), groupId)) {
+				Utilities.addErrorMessage(Utilities.rb.getString("error.group_sync_failed"));
+				return ORGANIZER_MEETING_PAGE_URL;
+			}
+			
+			//add group members to the timeslot and save
+			List<String> groupMembers = sakaiFacade.getGroupMembers(currentSiteId(), groupId);
+			
+			//remove all of the existing attendees from this list to remove duplicates
+			groupMembers.removeAll(attendeeUserIds);
+	
+			//add members and go to return page
+			return addAttendeesToTimeslot(currentSiteId(),timeslotWrapper, groupMembers);
+		}
+	}
+	
+	/**
+	 * Helper to add users to a timeslot and get the return URL
+	 * @param userId
+	 * @return
+	 */
+	private String addAttendeesToTimeslot(String siteId, TimeslotWrapper timeslotWrapper, List<String> userIds) {
+		
+		boolean errors = false;
+		SignupMeeting meeting = null;
+		
+		//foreach userId, add to timeslot
+		for(String userId: userIds) {
+		
+			SignupAttendee attendee = new SignupAttendee(userId, siteId);
+			timeslotWrapper.setNewAttendee(attendee);
+			
+			try {
+				AddAttendee addAttendee = new AddAttendee(signupMeetingService, currentUserId(), currentSiteId(), true);
+				meeting = addAttendee.signup(getMeetingWrapper().getMeeting(), timeslotWrapper.getTimeSlot(),timeslotWrapper.getNewAttendee());
+	
+				if (sendEmail) {
+					try {
+						signupMeetingService.sendEmailToParticipantsByOrganizerAction(addAttendee.getSignupEventTrackingInfo());
+					} catch (Exception e) {
+						logger.error(Utilities.rb.getString("email.exception") + " - " + e.getMessage(), e);
+					}
+				}
+			} catch (SignupUserActionException ue) {
+				Utilities.addErrorMessage(ue.getMessage());
+				logger.error(ue.getMessage());
+				errors = true;
+				break;
+	
+			} catch (Exception e) {
+				logger.error(Utilities.rb.getString("error.occurred_try_again") + " - " + e.getMessage(), e);
+				errors = true;
+				break;
+			}
+		}
+		
+		if(errors) {
+			Utilities.addErrorMessage(Utilities.rb.getString("error.occurred_try_again"));
+			return ORGANIZER_MEETING_PAGE_URL;
+		}
+		
+		String nextPage = updateMeetingwrapper(meeting, ORGANIZER_MEETING_PAGE_URL);
 
+		if (ORGANIZER_MEETING_PAGE_URL.equals(nextPage)) {
+			setAddNewAttendee(false);
+			setSelectedTimeslotId(null);
+			
+			Utilities.addInfoMessage(Utilities.rb.getString("group_synchronise_done"));
+		}
+		return nextPage;
+	}
+	
+	/**
+	 * Helper to check if we need to show the email link
+	 * If we have email addresses, then the link shows up.
+	 * @return true/false
+	 */
+	public boolean isShowEmailAllAttendeesLink() {
+		return StringUtils.isNotBlank(getAllAttendeesEmailAddressesFormatted());
+	}
+	
+	/**
+	 * Helper to get the email address for the current user
+	 * @return
+	 */
+	public String getCurrentUserEmailAddress() {
+		return sakaiFacade.getUser(sakaiFacade.getCurrentUserId()).getEmail();
+	}
 }

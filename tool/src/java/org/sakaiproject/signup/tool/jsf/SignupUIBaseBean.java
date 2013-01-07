@@ -22,14 +22,32 @@
  **********************************************************************************/
 package org.sakaiproject.signup.tool.jsf;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import javax.faces.context.FacesContext;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.LogFactoryImpl;
 import org.sakaiproject.signup.logic.SakaiFacade;
+import org.sakaiproject.signup.logic.SignupCalendarHelper;
 import org.sakaiproject.signup.logic.SignupMeetingService;
 import org.sakaiproject.signup.logic.SignupMessageTypes;
 import org.sakaiproject.signup.logic.SignupUserActionException;
@@ -41,6 +59,7 @@ import org.sakaiproject.signup.model.SignupTimeslot;
 import org.sakaiproject.signup.tool.jsf.attachment.AttachmentHandler;
 import org.sakaiproject.signup.tool.util.SignupBeanConstants;
 import org.sakaiproject.signup.tool.util.Utilities;
+import org.sakaiproject.user.api.User;
 
 /**
  * <p>
@@ -54,6 +73,9 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 	protected SakaiFacade sakaiFacade;
 
 	protected SignupMeetingService signupMeetingService;
+	
+	@Getter @Setter
+	protected SignupCalendarHelper calendarHelper;
 	
 	private AttachmentHandler attachmentHandler;
 
@@ -69,9 +91,6 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 										"signup.default.email.notification", "true")) ? true : false;
 
 	protected static boolean DEFAULT_EXPORT_TO_CALENDAR_TOOL = "true".equalsIgnoreCase(Utilities.getSignupConfigParamVal("signup.default.export.to.calendar.setting", "true")) ? true : false;
-
-	//fix layout issue for ckEditor --fixed the issue
-	private boolean ckEditor = false;//"ckeditor".equalsIgnoreCase(Utilities.getSignupConfigParamVal("wysiwyg.editor", "FCKeditor")) ? true : false;
 	
 	protected boolean publishToCalendar = DEFAULT_EXPORT_TO_CALENDAR_TOOL;
 	
@@ -81,11 +100,19 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 
 	protected Boolean publishedSite;
 	
-	protected boolean sendEmailAttendeeOnly = false;
+	//protected boolean sendEmailAttendeeOnly = false;
+	
+	protected String sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;
 	
 	private int maxSlots; 
 
 	private int maxAttendeesPerSlot;
+	
+	protected String customLocation;
+		
+	protected String customCategory;
+	
+	protected static final String ICS_MIME_TYPE="text/calendar";
 
 
 	/**
@@ -132,7 +159,9 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 			
 			List<AttendeeWrapper> attendeeWrp = new ArrayList<AttendeeWrapper>();
 			int posIndex = 0;
-			for (SignupAttendee attendee : elm.getAttendees()) {
+			//clean the list
+			List<SignupAttendee> cleanedList = getValidAttendees(elm.getAttendees());
+			for (SignupAttendee attendee : cleanedList) {
 				AttendeeWrapper attWrp = new AttendeeWrapper(attendee, sakaiFacade.getUserDisplayName(attendee
 						.getAttendeeUserId()));
 				attWrp.setPositionIndex(posIndex++);
@@ -217,15 +246,19 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 	/*private List<AttendeeWrapper> wrapAttendees(List<SignupAttendee> attendees) {
 		List<AttendeeWrapper> attendeeWrp = new ArrayList<AttendeeWrapper>();
 		int posIndex = 0;
-		for (SignupAttendee attendee : attendees) {
-			AttendeeWrapper attWrp = new AttendeeWrapper(attendee, sakaiFacade.getUserDisplayName(attendee
-					.getAttendeeUserId()));
+		
+		//clean the list
+		List<SignupAttendee> cleanedList = getValidAttendees(attendees);
+		
+		for (SignupAttendee attendee : cleanedList) {
+			AttendeeWrapper attWrp = new AttendeeWrapper(attendee, sakaiFacade.getUserDisplayName(attendee.getAttendeeUserId()));
 			attWrp.setPositionIndex(posIndex++);
 			attendeeWrp.add(attWrp);
 
 			// current user is already signed up in one of the timeslot 
-			if (attendee.getAttendeeUserId().equals(sakaiFacade.getCurrentUserId()))
+			if (attendee.getAttendeeUserId().equals(sakaiFacade.getCurrentUserId())) {
 				setCurrentUserSignedup(true);
+			}
 		}
 		return attendeeWrp;
 	}*/
@@ -375,7 +408,7 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 	 */
 	public boolean getAnnouncementType() {
 		boolean anoun = false;
-		if (meetingWrapper !=null && meetingWrapper.getMeeting() !=null
+		if (meetingWrapper !=null && meetingWrapper.getMeeting() !=null 
 				&& ANNOUNCEMENT.equals(meetingWrapper.getMeeting().getMeetingType()))
 			anoun= true;
 		
@@ -536,17 +569,250 @@ abstract public class SignupUIBaseBean implements SignupBeanConstants, SignupMes
 		this.publishToCalendar = publishToCalendar;
 	}
 	
-	public boolean getSendEmailAttendeeOnly() {
+	/*public boolean getSendEmailAttendeeOnly() {
 		return sendEmailAttendeeOnly;
 	}
 
 	public void setSendEmailAttendeeOnly(boolean sendEmailAttendeeOnly) {
 		this.sendEmailAttendeeOnly = sendEmailAttendeeOnly;
+	}*/
+	
+	public String getSendEmailToSelectedPeopleOnly() {
+		return sendEmailToSelectedPeopleOnly;
 	}
 
-	public boolean getCkEditor() {
-		return ckEditor;
+	public void setSendEmailToSelectedPeopleOnly(
+			String sendEmailToSelectedPeopleOnly) {
+		this.sendEmailToSelectedPeopleOnly = sendEmailToSelectedPeopleOnly;
+	}
+	
+	/**
+	 * Clean the list of attendees by checking that each user is valid
+	 * @param attendees	List of attendees to be cleaned
+	 * @return	the cleaned list
+	 */
+	public List<SignupAttendee> getValidAttendees(List<SignupAttendee> attendees) {
+		List<SignupAttendee> cleanedList = new ArrayList<SignupAttendee>();
+		
+		for(SignupAttendee attendee: attendees){
+			if(sakaiFacade.checkForUser(attendee.getAttendeeUserId())) {
+				cleanedList.add(attendee);
+			}
+		}
+		
+		return cleanedList;
+	}
+	
+	/**
+	 * Gets the userId for a user, given an eid or an email address. 
+	 * We check if it matches the eid first, then if it matches an email address.
+	 * If nothing, return null.
+	 * 
+	 * @param value		the string to lookup, could be an eid or an email address
+	 * @return	the userId or null if User cannot be found
+	 */
+	public String getUserIdForEidOrEmail(String value) {
+		User u = sakaiFacade.getUserByEid(value);
+		if(u==null) {
+			u=sakaiFacade.getUserByEmail(value);
+		}
+		
+		if(u!=null) {
+			return u.getId();
+		}
+		
+		return null;
+	}
+	
+	
+	/**
+	 * Get the eids assocaited with an email address, ie there may be two or more users with the same email address. 
+	 * We need to be able to handle this in the UI.
+	 * 
+	 * @param email
+	 * @return	List<String> of eids.
+	 */
+	public List<String> getEidsForEmail(String email) {
+		List<User> users = sakaiFacade.getUsersByEmail(email);
+		
+		List<String> eids = new ArrayList<String>();
+		for(User u:users) {
+			eids.add(u.getEid());
+		}
+		
+		return eids;
+	}
+	
+	// Generate a group title based on the input given
+	public String generateGroupTitle(String meetingTitle, SignupTimeslot timeslot) {
+		
+		final char SEPARATOR = '-';
+		
+		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(meetingTitle);
+		sb.append(SEPARATOR);
+		sb.append(df.format(timeslot.getStartTime()));
+		sb.append(SEPARATOR);
+		sb.append(df.format(timeslot.getEndTime()));
+		
+		return sb.toString();
+	}
+	
+	//generate a group description
+	public String generateGroupDescription(String meetingTitle, SignupTimeslot timeslot) {
+		return Utilities.rb.getString("group.description.default");
+	}
+	//convert a list of SignupAttendees to a list of userIds
+	public List<String> convertAttendeesToUuids(List<SignupAttendee> attendees) {
+		
+		List<String> uuids = new ArrayList<String>();
+		
+		for(SignupAttendee a: attendees) {
+			uuids.add(a.getAttendeeUserId());
+		}
+		
+		return uuids;
+	}
+	
+	//convert a list of AttendeeWrappers to a list of userIds
+	public List<String> convertAttendeeWrappersToUuids(List<AttendeeWrapper> attendees) {
+		
+		List<String> uuids = new ArrayList<String>();
+		
+		for(AttendeeWrapper a: attendees) {
+			uuids.add(a.getSignupAttendee().getAttendeeUserId());
+		}
+		
+		return uuids;
 	}
 
+	
+	/**
+	 * Helper to get a formatted string of all attendee email addresses for all tineslots
+	 * so we can use them in a mailto link
+	 * @return String of all email addresses
+	 */
+	public String getAllAttendeesEmailAddressesFormatted() {
+		
+		Set<String> emails = new HashSet<String>();
+		
+		StringBuilder sb = new StringBuilder();
+		for (TimeslotWrapper tsWrapper : timeslotWrappers) {
+			for(AttendeeWrapper atWrapper : tsWrapper.getAttendeeWrappers()) {
+				String email = atWrapper.getAttendeeEmail();
+				if(StringUtils.isNotBlank(email)){
+					emails.add(email);
+				}
+			}
+		}
+		
+		for(String e: emails) {
+			sb.append(e);
+			sb.append(',');
+		}
+		
+		//trim off last , and return
+		return StringUtils.removeEnd(sb.toString(), ",");
+	}
+	
+	/**
+	 * Generate and send for download an ICS file for the meeting. Contains no timeslots, just the meeting itself.
+	 * This method is in this particular bean because 1. We have access to the meeting here, and 2. it is used in more than one sub-bean.
+	 */
+	public void downloadICSForMeeting() {
+			
+		String filePath = calendarHelper.createCalendarFile(Collections.singletonList(calendarHelper.generateVEventForMeeting(meetingWrapper.getMeeting())));;
+		
+		if(StringUtils.isNotBlank(filePath)) {
+			logger.debug("filepath: " + filePath);
+			sendDownload(filePath, ICS_MIME_TYPE);
+		} else {
+			logger.error("Could not generate file for download");
+			//TODO this could set an error and return perhaps.
+		}
+		
+	}
+	
+	/**
+	 * Send a file for download. 
+	 * 
+	 * @param filePath
+	 * 
+	 */
+	protected void sendDownload(String filePath, String mimeType) {
+
+		FacesContext fc = FacesContext.getCurrentInstance();
+		ServletOutputStream out = null;
+		
+		String filename = StringUtils.substringAfterLast(filePath, File.separator);
+		
+		try {
+			HttpServletResponse response = (HttpServletResponse) fc.getExternalContext().getResponse();
+			
+			response.reset();
+			response.setHeader("Pragma", "public");
+			response.setHeader("Cache-Control","public, must-revalidate, post-check=0, pre-check=0, max-age=0"); 
+			response.setContentType(mimeType);
+			response.setHeader("Content-disposition", "attachment; filename=" + filename);
+			
+			out = response.getOutputStream();
+
+			IOUtils.copy(FileUtils.openInputStream(new File(filePath)), out);
+
+			out.flush();
+		} catch (IOException ex) {
+			logger.warn("Error generating file for download:" + ex.getMessage());
+		} finally {
+			IOUtils.closeQuietly(out);
+		}
+		fc.responseComplete();
+		
+	}
+	
+	/**
+	 * Is ICS calendar generation enabled in the external calendaring service?
+	 * @return	true/false
+	 */
+	public boolean isIcsEnabled() {
+		return calendarHelper.isIcsEnabled();
+	}
+	
+	private String iframeId = "";
+
+	/**
+	 * This is a getter method which provide current Iframe id for refresh
+	 * IFrame purpose.
+	 * 
+	 * @return a String
+	 */
+	public String getIframeId() {
+		HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext()
+				.getRequest();
+		String iFrameId = (String) request.getAttribute("sakai.tool.placement.id");
+		return iFrameId;
+	}
+
+	public void setIframeId(String iframeId) {
+		this.iframeId = iframeId;
+	}
+
+	public String getCustomLocation() {
+		return customLocation;
+	}
+
+	public void setCustomLocation(String customLocation) {
+		this.customLocation = customLocation;
+	}
+
+	public String getCustomCategory() {
+		return customCategory;
+	}
+
+	public void setCustomCategory(String customCategory) {
+		this.customCategory = customCategory;
+	}
 
 }

@@ -62,6 +62,51 @@
 								
 	}
 	
+	function handleDropDownAndInput(labelAdd, labelClose, inputTagName, dropdownTagName){
+		var labelAddTag = document.getElementById(labelAdd);
+		switchShowOrHide(labelAddTag);
+		
+		var labelCloseTag = document.getElementById(labelClose);
+		switchShowOrHide(labelCloseTag);
+		
+		var inputTag = document.getElementById(inputTagName);
+		switchShowOrHide(inputTag);
+		
+		var dropdownTag = document.getElementById(dropdownTagName);
+		
+		if(dropdownTag && inputTag){
+			if(inputTag.style.display!="none"){				
+				dropdownTag.style.display="none";
+				dropdownTag.disabled=true;
+			}
+			else{
+				dropdownTag.style.display="";
+				dropdownTag.disabled=false;
+				inputTag.value='';
+			}
+		}
+	}
+	
+	function initDropDownAndInput(labelAdd, labelClose, inputTagName, dropdownTagName){
+		var labelAddTag = document.getElementById(labelAdd);
+		var labelCloseTag = document.getElementById(labelClose);
+		var inputTag = document.getElementById(inputTagName);
+		var dropdownTag = document.getElementById(dropdownTagName);
+		
+		if(!dropdownTag && inputTag){//no dropdown list exists
+			inputTag.style.display="";
+			return;
+		}
+		
+		if(inputTag && inputTag.value && inputTag.value.length >0){
+			dropdownTag.style.display="none";
+			dropdownTag.disabled=true;
+			inputTag.style.display="";
+			labelCloseTag.style.display="";
+			labelAddTag.style.display="none";
+		}		
+	}
+	
 	function switchShowOrHide(tag){
 		if(tag){
 			if(tag.style.display=="none")
@@ -297,6 +342,8 @@
 				    var startTimeTag ="startTime";
 				    var endTimeTag ="endTime";
 				    var slotNumTag = document.getElementById("meeting:numberOfSlot");
+				    if(!document.getElementById("meeting:maxSlots"))
+				    	return;
 				    var maxSlots = parseInt(document.getElementById("meeting:maxSlots").innerHTML);
 					if (!slotNumTag)
  						return;	
@@ -337,13 +384,23 @@
 					waiting = true;
 					setEndtimeMonthDateYear();
 					getSignupDurationNoDecimal();
+					sakai.updateSignupBeginsExact();
+					sakai.updateSignupEndsExact(); 
 				  	setTimeout("waiting=false;", 1500);//1.5 sec
 				}			
 		}
 	
 //end
-			
-		
+	function setIframeHeight_DueTo_Ckeditor(){
+		//half second delay to refresh page -CKeditor
+		window.setTimeout('signup_resetCurrentIFrameHeight()',500);
+	}		
+	function signup_resetCurrentIFrameHeight(){
+		var iframeId = document.getElementById("meeting:iframeId");
+		if(iframeId)
+			signup_resetIFrameHeight(iframeId.value);
+	}
+	
 	function signup_resetIFrameHeight(iFrameId){
 		if (!iFrameId)
 			return;
@@ -481,25 +538,25 @@ var sakai = sakai ||
  args: id of table, id of select all checkbox, highlight row class
  */
 sakai.setupSelectListMultiple = function(list, allcontrol, highlightClass){
-    $('.' + list + ' :checked').parent("td").parent("tr").addClass(highlightClass);
-    $('.waitListed :checked').parent("td").parent("tr").addClass(highlightClass);
-    $('.' + allcontrol).click(function(){
+    jQuery('.' + list + ' :checked').parent("td").parent("tr").addClass(highlightClass);
+    jQuery('.waitListed :checked').parent("td").parent("tr").addClass(highlightClass);
+    jQuery('.' + allcontrol).click(function(){
         if (this.checked) {
-            $(this).parents('table.availableSpots').children('tbody').find('input').attr('checked',true);
-            $(this).parents('table.availableSpots').children('tbody').find('tr').addClass(highlightClass);
+            jQuery(this).parents('table.availableSpots').children('tbody').find('input').attr('checked',true);
+            jQuery(this).parents('table.availableSpots').children('tbody').find('tr').addClass(highlightClass);
         }
         else {
-            $(this).parents('label').parents('table.availableSpots').children('tbody').find('input').attr('checked',false);
-            $(this).parents('table.availableSpots').children('tbody').find('tr').removeClass(highlightClass);
+            jQuery(this).parents('label').parents('table.availableSpots').children('tbody').find('input').attr('checked',false);
+            jQuery(this).parents('table.availableSpots').children('tbody').find('tr').removeClass(highlightClass);
         }
     });
     
-    $('.' + list + ' :checkbox, .waitListed :checkbox').click(function(){
+    jQuery('.' + list + ' :checkbox, .waitListed :checkbox').click(function(){
         if (this.checked) {
-            $(this).parent('td').parent('tr').addClass(highlightClass);
+            jQuery(this).parent('td').parent('tr').addClass(highlightClass);
         }
         else {
-            $(this).parent('td').parent('tr').removeClass(highlightClass);
+            jQuery(this).parent('td').parent('tr').removeClass(highlightClass);
         }
     });
 };
@@ -507,27 +564,174 @@ sakai.setupSelectListMultiple = function(list, allcontrol, highlightClass){
 
 sakai.setupPrintPreview = function(){
   if (window.name == 'printwindow') {
-    $('.portletBody').addClass('portletBodyPrint');
-    $("h3").append(' (<a href="javascript:window.print()">Print</a>)');
+    jQuery('.portletBody').addClass('portletBodyPrint');
+    jQuery("h3").append(' (<a href="javascript:window.print()">Print</a>)');
     /*
     manipulate checkboxes
     */
-   $('#attendanceList :checkbox').each(function(){
-       if ($(this).attr('checked') ===true){
-           $(this).before('<span class="printCheckbox">X</span>')
+   jQuery('#attendanceList :checkbox').each(function(){
+       if (jQuery(this).attr('checked') ===true){
+           jQuery(this).before('<span class="printCheckbox">X</span>')
        }
        else{
-           $(this).before('<span class="printCheckbox">&nbsp;&nbsp;</span>')
+           jQuery(this).before('<span class="printCheckbox">&nbsp;&nbsp;</span>')
        }
    })
   }
 }	
 
 sakai.setupWaitListed = function(){
-    if ($('.waitListed').length > 0) {
-        $('.toggle').show();
+    if (jQuery('.waitListed').length > 0) {
+        jQuery('.toggle').show();
     }
-    $('.toggle a').click(function(){
-        $('.waitListed').toggle();
+    jQuery('.toggle a').click(function(){
+        jQuery('.waitListed').toggle();
     })
 }
+
+sakai.initSignupBeginAndEndsExact = function() {
+	sakai.updateSignupBeginsExact();
+	sakai.updateSignupEndsExact();
+}
+
+sakai.updateSignupBeginsExact = function() {
+	
+	// get start time from the main date selector
+	var startTime = new Date(getSignupDateTime('startTime'));
+	
+	//get offset
+	//need special selector syntax because of the :
+	var signupBeginsOffset = jQuery('[id=meeting:signupBegins]').val();
+	
+	//get offset type
+	var signupBeginsOffsetType = jQuery('[id=meeting:signupBeginsType]').val();
+	
+	//calculate actual signupBegin time
+	var signupBeginsExact = '';
+	if(signupBeginsOffsetType == 'minutes') {
+		signupBeginsExact = startTime.subtractMinutes(signupBeginsOffset);
+	}
+	if(signupBeginsOffsetType == 'hours') {
+		signupBeginsExact = startTime.subtractHours(signupBeginsOffset);
+	}
+	if(signupBeginsOffsetType == 'days') {
+		signupBeginsExact = startTime.subtractDays(signupBeginsOffset);
+	}
+	if(signupBeginsOffsetType == 'startNow') {
+		signupBeginsExact = startTime;
+	}	
+	
+	//set the new date into the fields
+	jQuery('[id=meeting:signupBeginsExact]').text(displayDateTime(signupBeginsExact));
+}
+
+sakai.updateSignupEndsExact = function() {
+	
+	// get end time from the main date selector
+	var endTime = new Date(getSignupDateTime('endTime'));
+	
+	//get offset
+	var signupEndsOffset = jQuery('[id=meeting:signupDeadline]').val();
+	
+	//get offset type
+	var signupEndsOffsetType = jQuery('[id=meeting:signupDeadlineType]').val();
+	
+	//calculate actual signupEnd time
+	var signupEndsExact = '';
+	if(signupEndsOffsetType == 'minutes') {
+		signupEndsExact = endTime.subtractMinutes(signupEndsOffset);
+	}
+	if(signupEndsOffsetType == 'hours') {
+		signupEndsExact = endTime.subtractHours(signupEndsOffset);
+	}
+	if(signupEndsOffsetType == 'days') {
+		signupEndsExact = endTime.subtractDays(signupEndsOffset);
+	}
+	
+	/*
+	alert("endTime: " + endTime);
+	alert("signupEndsOffset: " + signupEndsOffset);
+	alert("signupEndsExact: " + signupEndsExact);
+	 */
+	
+	//set the new date into the fields
+	jQuery('[id=meeting:signupEndsExact]').text(displayDateTime(signupEndsExact));
+}
+
+sakai.toggleExactDateVisibility = function() {
+	
+	//only visible when the meeting is once only, so check for that.
+	var recurrence = jQuery('[id=meeting:recurSelector]').val();
+	if(recurrence == 'no_repeat') {
+		jQuery('[id=meeting:signupBeginsExact]').show();
+		jQuery('[id=meeting:signupEndsExact]').show();
+	} else {
+		jQuery('[id=meeting:signupBeginsExact]').hide();
+		jQuery('[id=meeting:signupEndsExact]').hide();
+	}
+	
+	
+}
+
+
+
+/**
+ * Date object method extensions to allow us to subtract values from dates 
+ */
+Date.prototype.subtractMinutes = function(i){
+    var nd = new Date(this.getTime());
+    nd.setMinutes(nd.getMinutes()-i);
+    return nd;
+}
+
+Date.prototype.subtractHours = function(i){
+    var nd = new Date(this.getTime());
+    nd.setHours(nd.getHours()-i);
+    return nd;
+}
+
+Date.prototype.subtractDays = function(i){
+    var nd = new Date(this.getTime());
+    nd.setHours(nd.getHours()-(i*24));
+    return nd;
+}
+
+function displayDateTime(d){
+	if(!d)
+		return "";
+	
+	var a_p = "";
+	var curr_hour = d.getHours();
+	if (curr_hour < 12){
+	   a_p = "AM";
+	}else{
+	   a_p = "PM";
+	}
+	if (curr_hour == 0){
+	   curr_hour = 12;
+	}
+	if (curr_hour > 12){
+	   curr_hour = curr_hour - 12;
+	}
+
+	var curr_min = d.getMinutes();
+
+	curr_min = curr_min + "";
+	if (curr_min.length == 1){
+	   curr_min = "0" + curr_min;
+	}	
+	var d_names = new Array("Sunday", "Monday", "Tuesday",
+				"Wednesday", "Thursday", "Friday", "Saturday");
+	var m_names = new Array("January", "February", "March", 
+			"April", "May", "June", "July", "August", "September", 
+			"October", "November", "December");
+
+	var curr_day = d.getDay();
+	var curr_date = d.getDate();	
+	var curr_month = d.getMonth();
+	var curr_year = d.getFullYear();	
+	return (curr_hour + ":" + curr_min + " " + a_p + ", " + d_names[curr_day] + ", "
+		   + m_names[curr_month] + " " +  curr_date + ", " + curr_year);
+
+}
+

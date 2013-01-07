@@ -20,8 +20,9 @@
 			<sakai:tool_bar>
 				<sakai:tool_bar_item value="#{msgs.modify_event}" action="#{OrganizerSignupMBean.modifyMeeting}" rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}" />
 				<sakai:tool_bar_item value="#{msgs.copy_event}" action="#{OrganizerSignupMBean.copyMeeting}" />
-				<sakai:tool_bar_item value="#{msgs.event_pageTop_link_for_download}" action="#{DownloadEventBean.downloadOneEvent}" />
-				<h:outputLink id="print" value="javascript:window.print();" style="vertical-align:bottom;">
+				<sakai:tool_bar_item value="#{msgs.event_pageTop_link_for_download_xls}" action="#{DownloadEventBean.downloadOneEventAsExcel}" />
+				<sakai:tool_bar_item value="#{msgs.event_pageTop_link_for_download_csv}" action="#{DownloadEventBean.downloadOneEventAsCsv}" rendered="#{DownloadEventBean.csvExportEnabled}" />
+				<h:outputLink id="print" value="javascript:window.print();">
 						<h:graphicImage url="/images/printer.png"
 							alt="#{msgs.print_friendly}" title="#{msgs.print_friendly}" styleClass="openCloseImageIcon"/>
 						<h:outputText value="#{msgs.print_event}" escape="false"/>
@@ -30,15 +31,16 @@
 		</h:form>
 		<sakai:view_content>
 
-			<h:outputText value="#{msgs.event_error_alerts} #{errorMessageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{errorMessageUIBean.error}"/>      			
-				
+			<h:outputText value="#{msgs.event_error_alerts} #{messageUIBean.errorMessage}" styleClass="alertMessage" escape="false" rendered="#{messageUIBean.error}"/>      			
+			<h:outputText value="#{messageUIBean.infoMessage}" styleClass="success" escape="false" rendered="#{messageUIBean.info}"/>      			
+			
 			<h:form id="meeting">
 			
 				<h:inputHidden id="userActionType" value="#{OrganizerSignupMBean.userActionType}"/>
 				<h:inputHidden id="selectedFirstUser"  value="#{OrganizerSignupMBean.selectedFirstUser}"/>
 			
 			 	<sakai:view_title value="#{msgs.organizer_page_title}"/>
-				<sakai:messages/>
+
 				<h:panelGrid columns="1" styleClass="organizerToplevelTable">
 					<%-- show title only when collapsed --%>
 					<h:panelGrid id="showMeetingTitleOnly" columns="2" columnClasses="titleColumn,valueColumn" styleClass="orgShowTitleOnly">
@@ -54,6 +56,8 @@
 					<%-- show all meeting details when expanded--%>
 					<h:panelGroup id="meetingInfoDetails">
 							<h:panelGrid columns="2" columnClasses="titleColumn,valueColumn" >
+								
+								<%-- title --%>
 								<h:outputText value="#{msgs.event_name}" styleClass="titleText" escape="false"/>
 									<h:panelGroup>
 										<h:panelGroup rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.recurrenceId !=null}">
@@ -63,11 +67,17 @@
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.title}" styleClass="longtext"/>
 								</h:panelGroup>
 								
+								<%-- owner --%>
 								<h:outputText value="#{msgs.event_owner}" styleClass="titleText" escape="false"/>
 								<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.creator}" styleClass="longtext"/>
 								
+								<%-- location --%>
 								<h:outputText value="#{msgs.event_location}" styleClass="titleText" escape="false"/>
 								<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.location}" styleClass="longtext"/>
+								
+								<%-- category --%>
+								<h:outputText value="#{msgs.event_category}" styleClass="titleText" escape="false"/>
+								<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.category}" styleClass="longtext"/>
 								
 								<h:outputText value="#{msgs.event_date}" styleClass="titleText" escape="false"/>
 								<h:panelGroup>
@@ -100,6 +110,13 @@
 										</h:outputText>
 									</h:panelGroup>
 								</h:panelGroup>		
+								
+								<!-- iCalendar link -->
+								<h:outputText value="#{msgs.event_icalendar_link}" styleClass="titleText" escape="false" rendered="#{OrganizerSignupMBean.icsEnabled}"/>
+								<h:commandLink id="mICS" action="#{OrganizerSignupMBean.downloadICSForMeeting}" rendered="#{OrganizerSignupMBean.icsEnabled}">
+									<h:graphicImage value="/images/calendar_add.png" alt="#{msgs.label_ics}" title="#{msgs.label_download_ics_meeting}" style="margin-right: 5px;" />
+									<h:outputText value="#{msgs.event_icalendar_label}"/>
+								</h:commandLink>
 								
 								<h:outputText value="#{msgs.event_signup_start}" styleClass="titleText" rendered="#{!OrganizerSignupMBean.announcementType}" escape="false"/>			
 								<h:panelGroup rendered="#{!OrganizerSignupMBean.announcementType}">
@@ -219,7 +236,7 @@
 					<%-- Organizer's editing main table --%>
 					 <h:dataTable id="timeslots" value="#{OrganizerSignupMBean.timeslotWrappers}" binding="#{OrganizerSignupMBean.timeslotWrapperTable}" var="timeSlotWrapper"
 					 rendered="#{!OrganizerSignupMBean.announcementType}"
-					 columnClasses="orgTimeslotCol,orgMaxAttsCol,orgSlotStatusCol,orgWaiterStatusCol"	
+					 columnClasses="orgTimeslotCol,orgMaxAttsCol,orgSlotStatusCol,orgGroupSync,orgWaiterStatusCol"	
 					 rowClasses="oddRow,evenRow"
 					 styleClass="signupTable" style="width:98%">
 							<h:column>		   
@@ -313,7 +330,27 @@
 					   		
 					   		<h:column>		   
 								<f:facet name="header">
-									<h:outputText value="#{msgs.tab_attendees}"/>
+									<h:panelGroup>
+										<h:outputText value="#{msgs.tab_attendees}"/>
+										
+										<%-- SIGNUP-86 allow all attendees to be mailed. To is self, bcc is the attendees --%>
+										<h:panelGroup rendered="#{OrganizerSignupMBean.showEmailAllAttendeesLink}">
+											<f:verbatim>
+												&nbsp;&nbsp;(
+											</f:verbatim>
+										
+											<h:outputLink 
+												value="mailto:#{OrganizerSignupMBean.currentUserEmailAddress}?bcc=#{OrganizerSignupMBean.allAttendeesEmailAddressesFormatted}&subject=#{OrganizerSignupMBean.meetingWrapper.meeting.title}" 
+												title="#{msgs.organizer_mailto_all}">
+												<h:outputText value="#{msgs.organizer_mailto_all_short}"/>
+											</h:outputLink>
+										
+											<f:verbatim>
+												)
+											</f:verbatim>
+										</h:panelGroup>
+										
+									</h:panelGroup>
 								</f:facet>
 								
 								<h:panelGroup rendered="#{timeSlotWrapper.timeSlot.canceled}">
@@ -375,11 +412,11 @@
 										   							<h:outputText value="#{msgs.event_replaceby}" escape="false" rendered="#{!OrganizerSignupMBean.eidInputMode}"/>
 										   							<h:outputText value="#{msgs.event_replaceby_Eid}" escape="false" rendered="#{OrganizerSignupMBean.eidInputMode}"/>
 										   							<h:panelGroup rendered="#{!OrganizerSignupMBean.eidInputMode}">
-											   							<h:selectOneMenu  id="replaceAttendeeList" binding="#{OrganizerSignupMBean.replacedAttendeeEid}" >
+											   							<h:selectOneMenu  id="replaceAttendeeList" binding="#{OrganizerSignupMBean.replacedAttendeeEidOrEmail}" >
 										   									<f:selectItems value="#{OrganizerSignupMBean.allAttendees}" />
 										   								</h:selectOneMenu>
 										   							</h:panelGroup>
-										   							<h:inputText id="replaceEidInput" value="#{OrganizerSignupMBean.userInputEid}" rendered="#{OrganizerSignupMBean.eidInputMode}" size="10"/>
+										   							<h:inputText id="replaceEidInput" value="#{OrganizerSignupMBean.userInputEidOrEmail}" rendered="#{OrganizerSignupMBean.eidInputMode}" size="10"/>
 									   								
 										   						</h:panelGrid>
 										   					
@@ -425,24 +462,39 @@
 						   					<h:panelGrid id="addNewAttendeeTable" columns="2">
 							   					<h:graphicImage value="/images/spacer.gif" width="16" height="16" alt="spacer" style="border:none"/>
 							   					<h:panelGrid id="selectAttendees" columns="2">
+						   							
 						   							<h:outputText value="#{msgs.attendee_select}" escape="false" rendered="#{!OrganizerSignupMBean.eidInputMode}"/>
 						   							<h:outputText value="#{msgs.attendee_enterEid}" escape="false" rendered="#{OrganizerSignupMBean.eidInputMode}"/>
 						   							
 						   							<h:panelGroup rendered="#{!OrganizerSignupMBean.eidInputMode}">
-							   							<h:selectOneMenu  id="newAttendeeList" binding="#{OrganizerSignupMBean.addNewAttendeeUserEid}" >
+							   							<h:selectOneMenu  id="newAttendeeList" binding="#{OrganizerSignupMBean.addNewAttendeeUserEidOrEmail}" >
 						   									<f:selectItems value="#{OrganizerSignupMBean.allAttendees}" />
 						   								</h:selectOneMenu>
 						   							</h:panelGroup>
-						   							<h:inputText  id="addAttendeeEidInput" size="15" value="#{OrganizerSignupMBean.userInputEid}" rendered="#{OrganizerSignupMBean.eidInputMode}" />
+						   							<h:inputText  id="addAttendeeEidOrEmailInput" size="20" value="#{OrganizerSignupMBean.userInputEidOrEmail}" rendered="#{OrganizerSignupMBean.eidInputMode}" />
 					   								
-						   						    <h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendee}"/>
-						   							<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
+					   								<h:panelGroup>
+						   						    	<h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendee}"/>
+						   								<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
+						   							</h:panelGroup>
+						   							
+						   							<%--  pad last column --%>
+						   							<h:outputText value="&nbsp;" escape="false" />
+						   							
 						   						</h:panelGrid>
 					   						</h:panelGrid>
 						   				</h:panelGroup>
 						   				
 						   			</h:panelGrid>
 						   		</h:panelGroup>	
+					   		</h:column>
+					   		
+					   		<%-- sync button. Rendered only is sync is enabled for this meeting and the meeting has not expired--%>
+					   		<h:column rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.createGroups && !OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">		   
+								<f:facet name="header">
+									<h:outputText value="#{msgs.group_synchronise_heading}"/>
+								</f:facet>
+						   		<h:commandButton value="#{msgs.group_synchronise_button}" action="#{OrganizerSignupMBean.synchroniseGroupMembership}"/>
 					   		</h:column>
 					   		
 					   		<h:column rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.allowWaitList}">		   
@@ -521,15 +573,20 @@
 									   							<h:outputText value="#{msgs.attendee_enterEid}" escape="false" rendered="#{OrganizerSignupMBean.eidInputMode}"/>
 									   							
 									   							<h:panelGroup rendered="#{!OrganizerSignupMBean.eidInputMode}">
-										   							<h:selectOneMenu  id="newWaiterList" binding="#{OrganizerSignupMBean.waiterEid}">
+										   							<h:selectOneMenu  id="newWaiterList" binding="#{OrganizerSignupMBean.waiterEidOrEmail}">
 									   									<f:selectItems value="#{OrganizerSignupMBean.allAttendees}" />
 									   								</h:selectOneMenu>
 									   							</h:panelGroup>
-									   							<h:inputText id="addWaiterEidInput" value="#{OrganizerSignupMBean.userInputEid}" rendered="#{OrganizerSignupMBean.eidInputMode}" size="8"/>
+									   							<h:inputText id="addWaiterEidOrEmailInput" size="20" value="#{OrganizerSignupMBean.userInputEidOrEmail}" rendered="#{OrganizerSignupMBean.eidInputMode}" />
 								   								
-								   								
-									   						    <h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendeeToWList}"/>
-									   							<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;" immediate="true"/>
+									   							<h:panelGroup>
+								   						    		<h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendeeToWList}"/>
+						   											<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
+						   										</h:panelGroup>
+									   							
+									   							<%--  pad last column --%>
+						   										<h:outputText value="&nbsp;" escape="false" />
+									   									
 									   						</h:panelGrid>
 									   				</h:panelGrid>
 								   				</h:panelGroup>

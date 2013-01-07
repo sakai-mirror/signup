@@ -22,12 +22,16 @@
  **********************************************************************************/
 package org.sakaiproject.signup.tool.jsf.organizer.action;
 
+import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.logic.SignupEmailFacade;
 import org.sakaiproject.signup.logic.SignupMeetingService;
 import org.sakaiproject.signup.logic.SignupMessageTypes;
@@ -38,6 +42,7 @@ import org.sakaiproject.signup.model.SignupAttendee;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
 import org.sakaiproject.signup.tool.util.SignupBeanConstants;
+import org.sakaiproject.signup.tool.util.Utilities;
 
 /**
  * <p>
@@ -234,6 +239,58 @@ public abstract class SignupAction implements SignupBeanConstants{
 			}
 		}
 		return tmp;
+	}
+	
+	// Generate a group title based on the input given
+	public String generateGroupTitle(String meetingTitle, SignupTimeslot timeslot, int rowNum) {
+		
+		//Based on the database limitation
+		final int TITLE_MAX_LENGTH = 99;
+		final char SEPARATOR = '-';
+
+		final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+		int titleSize = TITLE_MAX_LENGTH - SakaiFacade.GROUP_PREFIX.length();
+		StringBuilder sb = new StringBuilder(titleSize);
+		
+		sb.append(" ");
+		sb.append(SEPARATOR);
+		sb.append(Utilities.rb.getString("group_slot_in_group_titlename"));
+		sb.append(" " + rowNum);
+		titleSize -= sb.length();
+		
+		if (titleSize > 0)
+			sb.insert(0, meetingTitle.substring(0, Math.min(titleSize, meetingTitle.length())));
+
+		return sb.toString();
+	}
+	
+	public String getFormatTimeslotDateTime(SignupTimeslot timeslot){
+		
+		final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+		final char SEPARATOR = '-';
+		StringBuilder sb = new StringBuilder();		
+		sb.append(df.format(timeslot.getStartTime()));
+		sb.append(SEPARATOR);
+		sb.append(df.format(timeslot.getEndTime()));
+		
+		return sb.toString();		
+	}
+	
+	//generate a group description
+	public String generateGroupDescription(String meetingTitle, SignupTimeslot timeslot) {		
+		Object[] params = new Object[] { getFormatTimeslotDateTime(timeslot)};
+		return MessageFormat.format(Utilities.rb.getString("group_description_default"),params);
+	}
+	//convert a list of SignupAttendees to a list of userIds
+	public List<String> convertAttendeesToUuids(List<SignupAttendee> attendees) {
+		
+		List<String> uuids = new ArrayList<String>();
+		
+		for(SignupAttendee a: attendees) {
+			uuids.add(a.getAttendeeUserId());
+		}
+		
+		return uuids;
 	}
 
 }
