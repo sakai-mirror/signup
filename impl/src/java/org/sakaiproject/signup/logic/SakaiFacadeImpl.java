@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -60,6 +62,7 @@ import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
+import org.sakaiproject.util.ResourceLoader;
 
 /**
  * <p>
@@ -76,6 +79,8 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	private static Log log = LogFactory.getLog(SakaiFacadeImpl.class);
 
 	private FunctionManager functionManager;
+	
+	private static ResourceLoader rb=  new ResourceLoader();
 
 	/**
 	 * set a Sakai FunctionManager object
@@ -283,6 +288,30 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	public String getUserDisplayName(String userId) {
 		try {
 			return userDirectoryService.getUser(userId).getDisplayName();
+		} catch (UserNotDefinedException e) {
+			log.warn("Cannot get user displayname for id: " + userId);
+			return "--------";
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getUserDisplayLastFirstName(String userId) {
+		try {
+			String dispLastName= userDirectoryService.getUser(userId).getLastName();
+			if(dispLastName !=null){
+				dispLastName = StringUtils.lowerCase(dispLastName, rb.getLocale());
+				dispLastName = StringUtils.capitalize(dispLastName);
+			}
+			String dispFirstName = userDirectoryService.getUser(userId).getFirstName();
+			if(dispFirstName !=null){
+				dispFirstName = StringUtils.lowerCase(dispFirstName, rb.getLocale());
+				dispFirstName = StringUtils.capitalize(dispFirstName);
+			}
+			String displayname = dispLastName +", " + dispFirstName;
+
+			return displayname;
 		} catch (UserNotDefinedException e) {
 			log.warn("Cannot get user displayname for id: " + userId);
 			return "--------";
@@ -530,7 +559,7 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
-	public List<SignupUser> getAllPossbileCoordinators(SignupMeeting meeting) {
+	public List<SignupUser> getAllPossibleCoordinators(SignupMeeting meeting) {
 		List<SignupUser> coordinators = new ArrayList<SignupUser>();
 		List<SignupUser> signUpUsers = getAllUsers(meeting);
 		for (SignupUser u : signUpUsers) {
@@ -710,29 +739,37 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		if (group == null)
 			return;
 		Set<Member> members = group.getMembers();
-		SignupUser signupUser = null;
+
+		//SIGNUP-241 : get bulk SakaiUsers for performance
+		List<String> userIds = new ArrayList<String>();
+		Map<String,Role> memberRoleMap = new Hashtable<String, Role>();
 		for (Member member : members) {
 			if (member.isActive()
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedGroup(member.getUserId(), SIGNUP_VIEW, site.getId(), group.getId()) || isAllowedSite(
 							member.getUserId(), SIGNUP_VIEW_ALL, site.getId()))) {
-				User user = getUserQuietly(member.getUserId());
-				if (user == null) {
-					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
-					/* will not add into the dropDown list
-					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
-							member.getRole(), site.getId(), site.isPublished());
-					processAddOrUpdateSignupUsers(signupUsers, signupUser);
-					*/
-					continue;
-				}
-
-				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
-						.getLastName(), member.getRole(), site.getId(), site.isPublished());
-				processAddOrUpdateSignupUsers(signupUsers, signupUser);
-				// comment: member.getUserDisplayId() not used
+				//User user = getUserQuietly(member.getUserId());
+				memberRoleMap.put(member.getUserId(), member.getRole());
+				userIds.add(member.getUserId());
 			}
 		}
+		
+		addAndPopulateSignupUsersInfo(signupUsers,memberRoleMap,userIds, site);
+	}
+	
+	private void addAndPopulateSignupUsersInfo(Set<SignupUser> signupUsers, Map<String,Role> memberRoleMap, List<String> userIds, Site site){
+		//it should filter out non-existing userIds
+		List<User> sakaiUsers = userDirectoryService.getUsers(userIds);
+		
+		if(sakaiUsers !=null){
+			for (User user : sakaiUsers) {
+				SignupUser signupUser = new SignupUser(user.getEid(), user.getId(), user.getFirstName(), user.getLastName(), 
+						memberRoleMap.get(user.getId()), site.getId(), site.isPublished());
+				processAddOrUpdateSignupUsers(signupUsers, signupUser);
+				// comment: member.getUserDisplayId() not used			
+			}
+		}
+		
 	}
 	
 	/* get all users in a specific group */
@@ -749,29 +786,21 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		if (group == null)
 			return;
 		Set<Member> members = group.getMembers();
-		SignupUser signupUser = null;
+
+		//SIGNUP-241 : get bulk SakaiUsers for performance
+		List<String> userIds = new ArrayList<String>();
+		Map<String,Role> memberRoleMap = new Hashtable<String, Role>();
 		for (Member member : members) {
 			if (member.isActive()
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedGroup(member.getUserId(), SIGNUP_ATTEND, site.getId(), group.getId()) || isAllowedSite(
 							member.getUserId(), SIGNUP_ATTEND_ALL, site.getId()))) {
-				User user = getUserQuietly(member.getUserId());
-				if (user == null) {
-					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
-					/* will not add into the dropDown list
-					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
-							member.getRole(), site.getId(), site.isPublished());
-					processAddOrUpdateSignupUsers(signupUsers, signupUser);
-					*/
-					continue;
-				}
-
-				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
-						.getLastName(), member.getRole(), site.getId(), site.isPublished());
-				processAddOrUpdateSignupUsers(signupUsers, signupUser);
-				// comment: member.getUserDisplayId() not used
+				memberRoleMap.put(member.getUserId(), member.getRole());
+				userIds.add(member.getUserId());
 			}
 		}
+		
+		addAndPopulateSignupUsersInfo(signupUsers,memberRoleMap,userIds, site);
 	}
 
 	private boolean hasPredefinedViewPermisson(Member member) {
@@ -795,30 +824,22 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		if (site == null)
 			return;
 
-		SignupUser signupUser = null;
+		//SIGNUP-241 : get bulk SakaiUsers for performance
+		List<String> userIds = new ArrayList<String>();
+		Map<String,Role> memberRoleMap = new Hashtable<String, Role>();
 		Set<Member> members = site.getMembers();
 		for (Member member : members) {
 			if (member.isActive()
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedSite(member.getUserId(), SIGNUP_VIEW, site.getId()) || isAllowedSite(member
 							.getUserId(), SIGNUP_VIEW_ALL, site.getId()))) {
-				User user = getUserQuietly(member.getUserId());
-				if (user == null) {
-					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
-					/* will not add into the dropDown list
-					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
-							member.getRole(), site.getId(), site.isPublished());
-					processAddOrUpdateSignupUsers(signupUsers, signupUser);
-					*/
-					continue;
-				}
-
-				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
-						.getLastName(), member.getRole(), site.getId(), site.isPublished());
-				processAddOrUpdateSignupUsers(signupUsers, signupUser);
-
+				memberRoleMap.put(member.getUserId(), member.getRole());
+				userIds.add(member.getUserId());
 			}
 		}
+		
+		addAndPopulateSignupUsersInfo(signupUsers,memberRoleMap,userIds, site);
+
 	}
 	
 	/* get all users in a site */
@@ -834,31 +855,22 @@ public class SakaiFacadeImpl implements SakaiFacade {
 		if (site == null)
 			return;
 
-		SignupUser signupUser = null;
 		Set<Member> members = site.getMembers();
+		//SIGNUP-241 : get bulk SakaiUsers for performance
+		List<String> userIds = new ArrayList<String>();
+		Map<String,Role> memberRoleMap = new Hashtable<String, Role>();
 		for (Member member : members) {
 			if (member.isActive()
 					&& (hasPredefinedViewPermisson(member)
 							|| isAllowedSite(member.getUserId(), SIGNUP_ATTEND, site.getId()) || isAllowedSite(member
 							.getUserId(), SIGNUP_ATTEND_ALL, site.getId()) || isAllowedSite(member
 									.getUserId(), SIGNUP_UPDATE_SITE, site.getId()))) {
-				User user = getUserQuietly(member.getUserId());
-				if (user == null) {
-					log.debug("user is not found from 'userDirectoryService' for userId:" + member.getUserId());
-					/* will not add into the dropDown list
-					signupUser = new SignupUser(member.getUserEid(), member.getUserId(), "", member.getUserEid(),
-							member.getRole(), site.getId(), site.isPublished());
-					processAddOrUpdateSignupUsers(signupUsers, signupUser);
-					*/
-					continue;
-				}
-
-				signupUser = new SignupUser(member.getUserEid(), member.getUserId(), user.getFirstName(), user
-						.getLastName(), member.getRole(), site.getId(), site.isPublished());
-				processAddOrUpdateSignupUsers(signupUsers, signupUser);
-
+				memberRoleMap.put(member.getUserId(), member.getRole());
+				userIds.add(member.getUserId());
 			}
 		}
+		
+		addAndPopulateSignupUsersInfo(signupUsers,memberRoleMap,userIds, site);
 	}
 
 	/**

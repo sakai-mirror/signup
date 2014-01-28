@@ -158,20 +158,20 @@
 								<h:outputText value="#{msgs.event_start_time}"  escape="false"/>
 							</h:panelGroup>	
 							<h:panelGroup styleClass="editText" rendered="#{!EditMeetingSignupMBean.customTsType}">
-		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.startTime}"
+		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.startTime}" timeZone="#{UserTimeZone.userTimeZoneStr}"
 		        							style="color:black;" popupCalendar="true" onfocus="showRescheduleWarning();" onkeyup="setEndtimeMonthDateYear(); getSignupDuration(); sakai.updateSignupBeginsExact(); return false;"
 		        							onchange="sakai.updateSignupBeginsExact();"/>
 										<h:message for="startTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
 							<h:panelGroup rendered="#{EditMeetingSignupMBean.customTsType}">
 									<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime pattern="EEEEEEEE, " />
+				 						<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>
 									<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime dateStyle="long" />
+				 						<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>
 				 					<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime pattern=", h:mm a" />
+				 						<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>		
 							</h:panelGroup>
 							
@@ -181,19 +181,19 @@
 								<h:outputText value="#{msgs.event_end_time}" escape="false"/>
 							</h:panelGroup>
 		        			<h:panelGroup styleClass="editText" rendered="#{!EditMeetingSignupMBean.customTsType}">
-		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.endTime}" style="color:black;" popupCalendar="true" 
+		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{EditMeetingSignupMBean.signupMeeting.endTime}" timeZone="#{UserTimeZone.userTimeZoneStr}" style="color:black;" popupCalendar="true" 
 		        						onfocus="showRescheduleWarning();" onkeyup="getSignupDuration(); sakai.updateSignupEndsExact(); return false;" onchange="sakai.updateSignupEndsExact();"/>
 										<h:message for="endTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>	
 							<h:panelGroup rendered="#{EditMeetingSignupMBean.customTsType}" >
 									<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime pattern="EEEEEEEE, " />
+										<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime dateStyle="long" />
+										<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{EditMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime pattern=", h:mm a" />
+										<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 							</h:panelGroup>
 							
@@ -344,6 +344,14 @@
 								<h:outputText value="#{msgs.event_yes_receive_notification}" escape="false"/>
 							</h:panelGroup>
 							
+							<h:outputText value="#{msgs.event_select_coordinators}" escape="false"  styleClass="titleText"/>
+							<h:dataTable id="meeting_coordinators" value="#{EditMeetingSignupMBean.allPossibleCoordinators}" var="coUser">
+								<h:column>
+									<h:selectBooleanCheckbox value="#{coUser.checked}"/>
+								    <h:outputText value="&nbsp;#{coUser.displayName}" escape="false" styleClass="longtext"/>				
+								</h:column>
+							</h:dataTable>	
+							
 							<h:outputText value="#{msgs.event_email_notification}" styleClass="titleText" escape="false"/>
 							<h:panelGrid columns="1" style="width:100%;margin-left:-3px;" rendered="#{EditMeetingSignupMBean.publishedSite}">
 								<h:panelGroup styleClass="editText" >
@@ -351,40 +359,19 @@
 									<h:outputText value="#{msgs.event_yes_email_notification}" escape="false"/>
 								</h:panelGroup>
 								
-								<h:panelGroup id="emailAttendeeOnly" style="display:none" >
+								<h:panelGroup id="emailAttendeeOnly">
 									<h:selectOneRadio  value="#{EditMeetingSignupMBean.sendEmailToSelectedPeopleOnly}" layout="lineDirection" styleClass="rs" style="margin-left:20px;">
-					                          <f:selectItem id="all_attendees" itemValue="all" itemLabel="#{msgs.label_email_all_people}"/>                                              
-					                          <f:selectItem id="only_signedUp_ones" itemValue="signup_only" itemLabel="#{msgs.label_email_signed_up_ones_only}"/>	
-					                          <f:selectItem id="only_organizers" itemValue="organizers_only" itemLabel="#{msgs.label_email_organizers_only}"/>	
-					         		</h:selectOneRadio> 
+										<f:selectItem id="all_attendees" itemValue="all" itemLabel="#{msgs.label_email_all_people}" itemDisabled="true"/>
+										<f:selectItem id="only_signedUp_ones" itemValue="signup_only" itemLabel="#{msgs.label_email_signed_up_ones_only}" itemDisabled="true"/>
+										<f:selectItem id="only_organizers" itemValue="organizers_only" itemLabel="#{msgs.label_email_organizers_only}" itemDisabled="true"/>
+									</h:selectOneRadio>
 								</h:panelGroup>
 							</h:panelGrid>
 							<h:panelGroup styleClass="editText" rendered="#{!EditMeetingSignupMBean.publishedSite}">
 								<h:selectBooleanCheckbox value="#{EditMeetingSignupMBean.sendEmail}" disabled="true"/>
 								<h:outputText value="#{msgs.event_email_not_send_out_label}" escape="false" style="color:#b11"/>
 							</h:panelGroup>
-							
-							<h:outputText value="#{msgs.event_select_coordinators}" escape="false"  styleClass="titleText"/>
-							<h:panelGroup>	
-			   	    				<h:outputLabel  id="imageOpen_editCoordinators" style="display:none" styleClass="activeTag" onclick="showDetails('meeting:imageOpen_editCoordinators','meeting:imageClose_hideCordinators','meeting:coordinators');">
-				   	    				<h:graphicImage value="/images/open.gif"  alt="open" title="Click to hide details." style="border:none;vertical-align:middle;" styleClass="openCloseImageIcon"/>
-				   	    				<h:outputText value="#{msgs.event_hide_coordinators}" escape="false" style="vertical-align: middle;"/>
-			   	    				</h:outputLabel>
-			   	    				<h:outputLabel id="imageClose_hideCordinators" styleClass="activeTag" onclick="showDetails('meeting:imageOpen_editCoordinators','meeting:imageClose_hideCordinators','meeting:coordinators');">
-			   	    					<h:graphicImage value="/images/closed.gif" alt="close" title="Click to show details." style="border:none;vertical-align:middle;" styleClass="openCloseImageIcon"/>
-			   	    					<h:outputText value="#{msgs.event_addedit_Coordinators}" escape="false" style="vertical-align: middle;"/>
-			   	    				</h:outputLabel>
-			   	    				<h:outputText value="&nbsp;#{msgs.event_select_coordinators_instruction}" escape="false"  styleClass="longtext"/>
-						   </h:panelGroup>
-							
-							<h:outputText id="coordinators_1" value="" escape="false" style="display:none"/>
-							<h:dataTable id="coordinators_2" value="#{EditMeetingSignupMBean.allPossibleCoordinators}" var="coUser"  
-							            styleClass="coordinatorTab" style="display:none">
-								<h:column>
-									<h:selectBooleanCheckbox value="#{coUser.checked}"/>
-								    <h:outputText value="&nbsp;#{coUser.displayName}" escape="false" styleClass="longtext"/>				
-								</h:column>
-							</h:dataTable>		
+								
 												
 							<h:outputText value="&nbsp;" escape="false"/>
 							<h:outputText value="&nbsp;" escape="false"/>

@@ -82,18 +82,29 @@ public class AttendeeSignupOwnEmail extends SignupEmailBase {
 		if (!meeting.isMeetingCrossDays()) {
 			Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getStartTime()).toStringLocalDate() };
+					getTime(timeslot.getStartTime()).toStringLocalDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.timeslot"), paramsTimeframe));
 		} else {
 			Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getStartTime()).toStringLocalShortDate(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getEndTime()).toStringLocalShortDate() };
+					getTime(timeslot.getEndTime()).toStringLocalShortDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.crossdays.timeslot"), paramsTimeframe));
 
 		}
+		
+		//attendee's comment
+		if(timeslot.getAttendee(attendee.getId()) !=null && timeslot.getAttendee(attendee.getId()).getComments() !=null
+				&& timeslot.getAttendee(attendee.getId()).getComments().length()> 0
+				&& !"&nbsp;".equals(timeslot.getAttendee(attendee.getId()).getComments())){
+			message.append(newline + newline + MessageFormat.format(rb.getString("body.ownComment"), new Object[] { 
+					timeslot.getAttendee(attendee.getId()).getComments() }));
+		}
+		
 		/* footer */
 		message.append(newline + getFooter(newline));
 		return message.toString();
@@ -106,7 +117,7 @@ public class AttendeeSignupOwnEmail extends SignupEmailBase {
 
 	@Override
 	public String getSubject() {
-		return MessageFormat.format(rb.getString("subject.attendee.signup.own.field"), new Object[] { meeting.getTitle(), getSiteTitle()});
+		return MessageFormat.format(rb.getString("subject.attendee.signup.own.field"), new Object[] { getAbbreviatedMeetingTitle(), getSiteTitle()});
 	}
 	
 }

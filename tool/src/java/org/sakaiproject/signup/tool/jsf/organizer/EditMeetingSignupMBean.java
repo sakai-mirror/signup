@@ -131,6 +131,9 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 	List<SignupUser> allPossibleCoordinators;
 	
 	private boolean sendEmailByOwner;
+	
+ 	private List<SelectItem> categories = null;
+ 	private List<SelectItem> locations=null;
 		
 	/**
 	 * This method will reset everything to orignal value and also initialize
@@ -144,7 +147,7 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		showAttendeeName = false;
 		sendEmail = DEFAULT_SEND_EMAIL;		
 		//sendEmailAttendeeOnly = false;
-		sendEmailToSelectedPeopleOnly = SEND_EMAIL_ONLY_SIGNED_UP_ATTENDEES;
+		sendEmailToSelectedPeopleOnly = SEND_EMAIL_ONLY_ORGANIZER_COORDINATORS;
 		
 		unlimited = false;
 
@@ -216,9 +219,11 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		this.selectedCategory = this.signupMeeting.getCategory();
 		this.customLocation="";
 		this.customCategory="";
+		this.categories = null;
+		this.locations = null;
 		
 		/*pre-load all possible coordinators for step2*/
-		this.allPossibleCoordinators = this.sakaiFacade.getAllPossbileCoordinators(this.signupMeeting);
+		this.allPossibleCoordinators = this.sakaiFacade.getAllPossibleCoordinators(this.signupMeeting);
 		populateExistingCoordinators();
 
 	}
@@ -755,10 +760,11 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
  	 * @return list of allLocations
  	 */
  	public List<SelectItem> getAllLocations(){
- 		
- 		List<SelectItem> locations= new ArrayList<SelectItem>();
- 		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
- 		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
+ 		if(locations ==null){
+ 			locations= new ArrayList<SelectItem>();
+ 			locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
+ 			locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
+ 		}
  		return locations;
  	}
  	
@@ -768,10 +774,11 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
  	 * @return list of categories
  	 */
  	public List<SelectItem> getAllCategories(){
- 		
- 		List<SelectItem> categories= new ArrayList<SelectItem>();
- 		categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
- 		categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		if(categories==null){
+ 			categories= new ArrayList<SelectItem>();
+ 			categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
+ 			categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 	}
  		return categories;
  	}
 
@@ -1082,17 +1089,14 @@ public class EditMeetingSignupMBean extends SignupUIBaseBean {
 		this.allPossibleCoordinators = allPossibleCoordinators;
 	}
 	
+	/* 
+	 * get the list of coords and check the appropriate ones.
+	 */
 	private void populateExistingCoordinators(){
 		List<String> existingCoUserIds = getExistingCoordinatorIds(this.signupMeeting);
-		if(!existingCoUserIds.isEmpty() && this.allPossibleCoordinators !=null){
-			for (SignupUser cou : allPossibleCoordinators) {
-				for (String existId : existingCoUserIds) {
-					if(existId.equals(cou.getInternalUserId())){
-						cou.setChecked(true);
-						break;
-					}
-				}
-				
+		for (SignupUser coord : allPossibleCoordinators) {
+			if(existingCoUserIds.contains(coord.getInternalUserId())) {
+				coord.setChecked(true);
 			}
 		}
 	}

@@ -102,11 +102,15 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	//New Location added in the editable field
 	private String customLocation;
 	
+	private List<SelectItem> locations=null;
+	
 	//Category selected from the dropdown
 	private String selectedCategory;
 	
 	//New Category added in the editable field
 	private String customCategory;
+	
+	private List<SelectItem> categories = null;
 
 	private String repeatType;
 
@@ -159,7 +163,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	
 	private boolean mandatorySendEmail = NEW_MEETING_SEND_EMAIL;
 	
-	private String sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;
+	private String sendEmailToSelectedPeopleOnly = SEND_EMAIL_ONLY_ORGANIZER_COORDINATORS;
 	
 	private boolean publishToCalendar = DEFAULT_EXPORT_TO_CALENDAR_TOOL;
 	
@@ -413,7 +417,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		if(NEW_MEETING_SEND_EMAIL){
 			sendEmail = NEW_MEETING_SEND_EMAIL;
 		}
-		sendEmailToSelectedPeopleOnly=SEND_EMAIL_ALL_PARTICIPANTS;
+		sendEmailToSelectedPeopleOnly=SEND_EMAIL_ONLY_ORGANIZER_COORDINATORS;
 		receiveEmail = false;
 		sendEmailByOwner= DEFAULT_SEND_EMAIL; /*will be inherited per meeting basis*/
 		allowComment = DEFAULT_ALLOW_COMMENT;
@@ -462,6 +466,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		this.selectedCategory=null;
 		this.customCategory="";
 		this.creatorUserId=null;
+		this.locations=null;
+		this.categories=null;
 		/*clean up everything in getUserDefineTimeslotBean*/
 		getUserDefineTimeslotBean().reset(UserDefineTimeslotBean.NEW_MEETING);
 	}
@@ -472,10 +478,12 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
  	 * @return list of allLocations
  	 */
  	public List<SelectItem> getAllLocations(){
+ 		if(locations ==null){
+ 			locations = new ArrayList<SelectItem>();
+ 			locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
+ 			locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
+ 		}
  		
- 		List<SelectItem> locations = new ArrayList<SelectItem>();
- 		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
- 		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
  		return locations;
  	}
  	
@@ -485,10 +493,11 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
  	 * @return list of categories
  	 */
  	public List<SelectItem> getAllCategories(){
- 		
- 		List<SelectItem> categories = new ArrayList<SelectItem>();
- 		categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
- 		categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		if(categories ==null){
+ 			categories = new ArrayList<SelectItem>();
+ 			categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
+ 			categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		}
  		return categories;
  	}
  	
@@ -578,6 +587,9 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	 */
 
 	public void validateNewMeeting(ActionEvent e) {
+		if(currentStepHiddenInfo == null)
+			return;
+		
 		String step = (String) currentStepHiddenInfo.getValue();
 
 		if (step.equals("step1")) {
@@ -725,7 +737,14 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			
 			/*pre-load all possible coordinators for step2*/
 			signupMeeting.setSignupSites(CreateSitesGroups.getSelectedSignupSites(getCurrentSite(), getOtherSites()));
-			this.allPossibleCoordinators = this.sakaiFacade.getAllPossbileCoordinators(this.signupMeeting);			
+			this.allPossibleCoordinators = this.sakaiFacade.getAllPossibleCoordinators(this.signupMeeting);
+			
+			// tick the creator by default (SIGNUP-216)
+			for(SignupUser u: this.allPossibleCoordinators) {
+				if(StringUtils.equals(u.getInternalUserId(), this.creatorUserId)) {
+					u.setChecked(true);
+				}
+			}
 
 		}
 	}
@@ -779,6 +798,18 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	 * @return an action outcome string.
 	 */
 	public String goBack() {
+		if(currentStepHiddenInfo == null){
+			//it is rarely happening if any
+			Utilities.addErrorMessage(Utilities.rb.getString("publish.withAttendee.exception"));
+			//recover this from "assignAttendee" step case too
+			//reset to remove timeslots info with attendees
+			timeSlotWrappers = null; 
+			assignParicitpantsToAllRecurEvents = false;
+			//reset warning for ending time auto-adjustment
+			setEndTimeAutoAdjusted(false);
+			return ADD_MEETING_STEP1_PAGE_URL;
+		}
+		
 		String step = (String) currentStepHiddenInfo.getValue();
 
 		if (step.equals("step2")) {
@@ -791,9 +822,8 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 			setEndTimeAutoAdjusted(false);
 			//reset who should receive emails
 			//setSendEmailAttendeeOnly(false);
-			if(this.sendEmailToSelectedPeopleOnly.equals(SEND_EMAIL_ONLY_SIGNED_UP_ATTENDEES)){
-				sendEmailToSelectedPeopleOnly = SEND_EMAIL_ALL_PARTICIPANTS;//reset
-			}
+			sendEmailToSelectedPeopleOnly = SEND_EMAIL_ONLY_ORGANIZER_COORDINATORS;//reset
+
 			return ADD_MEETING_STEP2_PAGE_URL;
 		}
 
@@ -984,7 +1014,7 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 		if (isDuplicateAttendee(timeslotWrapper.getTimeSlot(), attendee)) {
 			Utilities.addErrorMessage(Utilities.rb.getString("attendee.already.in.timeslot"));
 		} else {
-			timeslotWrapper.addAttendee(attendee, sakaiFacade.getUserDisplayName(attendeeUserId));
+			timeslotWrapper.addAttendee(attendee, sakaiFacade.getUserDisplayLastFirstName(attendeeUserId));
 		}
 
 		return "";
@@ -1991,12 +2021,15 @@ public class NewSignupMeetingBean implements MeetingTypes, SignupMessageTypes, S
 	}
 	
 	public boolean isAllLocationsEmpty(){
-		return !Utilities.getSignupMeetingsBean().isMeetingsAvailable();
+		// this is safe to call often since we cache the locations
+		//it already has one label item in
+		return !(getAllLocations().size()>1);
 			
 	}
 	
 	public boolean isCategoriesExist() {
-		return !Utilities.getSignupMeetingsBean().getAllCategories().isEmpty();
+		// this is safe to call often since we cache the categories
+		return getAllCategories().size()>1;
 	}
 
 	public UserDefineTimeslotBean getUserDefineTimeslotBean() {

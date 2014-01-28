@@ -82,31 +82,31 @@
 								<h:outputText value="#{msgs.event_date}" styleClass="titleText" escape="false"/>
 								<h:panelGroup>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}" styleClass="longtext">
-									 	<f:convertDateTime pattern="EEEEEEEE, "/>
+									 	<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}" styleClass="longtext">
-								 	<f:convertDateTime dateStyle="long"/>
+								 	<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 								</h:outputText>
 								</h:panelGroup>
 								
 								<h:outputText value="#{msgs.event_time_period}" styleClass="titleText" escape="false"/>
 								<h:panelGroup>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}">
-										<f:convertDateTime pattern="h:mm a" />
+										<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-										<f:convertDateTime pattern=", EEEEEEEE" />
+										<f:convertDateTime pattern=", EEEEEEEE" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.endTime}">
-										<f:convertDateTime pattern="h:mm a" />
+										<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:panelGroup rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
 										<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.endTime}" >
-												<f:convertDateTime pattern=", EEEEEEEE, "/>
+												<f:convertDateTime pattern=", EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 										</h:outputText>
 										<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.endTime}" >
-												<f:convertDateTime dateStyle="long"/>
+												<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 										</h:outputText>
 									</h:panelGroup>
 								</h:panelGroup>		
@@ -121,26 +121,26 @@
 								<h:outputText value="#{msgs.event_signup_start}" styleClass="titleText" rendered="#{!OrganizerSignupMBean.announcementType}" escape="false"/>			
 								<h:panelGroup rendered="#{!OrganizerSignupMBean.announcementType}">
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupBegins}" styleClass="longtext">
-									 	<f:convertDateTime pattern="EEEEEEEE, " />
+									 	<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupBegins}" styleClass="longtext">
-									 	<f:convertDateTime dateStyle="long" />
+									 	<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupBegins}" styleClass="longtext">
-									 	<f:convertDateTime pattern=", h:mm a" />
+									 	<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 								</h:panelGroup>
 									
 								<h:outputText value="#{msgs.event_signup_deadline}" styleClass="titleText" rendered="#{!OrganizerSignupMBean.announcementType}" escape="false"/>
 								<h:panelGroup rendered="#{!OrganizerSignupMBean.announcementType}">
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupDeadline}" styleClass="longtext">
-									 	<f:convertDateTime pattern="EEEEEEEE, " />
+									 	<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupDeadline}" styleClass="longtext">
-									 	<f:convertDateTime dateStyle="long" />
+									 	<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{OrganizerSignupMBean.meetingWrapper.meeting.signupDeadline}" styleClass="longtext">
-									 	<f:convertDateTime pattern=", h:mm a" />
+									 	<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 								</h:panelGroup>
 								
@@ -208,11 +208,11 @@
 					<h:panelGrid  id="orgMeeting_191" columns="3" rendered="#{!OrganizerSignupMBean.announcementType}" columnClasses="titleColumn,valueColumn,alignRightColumn" styleClass="emailTable">										
 						<h:outputText value="#{msgs.event_email_notification}" styleClass="titleText" escape="false"/>
 						<h:panelGroup styleClass="longtext" rendered="#{OrganizerSignupMBean.publishedSite}">
-							<h:selectBooleanCheckbox value="#{OrganizerSignupMBean.sendEmail}" style="vertical-align:middle;"/>
+							<h:selectBooleanCheckbox id="chkBx_pub" value="#{OrganizerSignupMBean.sendEmail}" style="vertical-align:middle;"/>
 							<h:outputText value="#{msgs.event_email_yes_label}" escape="false" />
 						</h:panelGroup>
 						<h:panelGroup styleClass="longtext" rendered="#{!OrganizerSignupMBean.publishedSite}">
-							<h:selectBooleanCheckbox value="#{OrganizerSignupMBean.sendEmail}" style="vertical-align:middle;" disabled="true"/>
+							<h:selectBooleanCheckbox id="chkBx_unpub" value="#{OrganizerSignupMBean.sendEmail}" style="vertical-align:middle;" disabled="true"/>
 							<h:outputText value="#{msgs.event_email_not_send_out_label}" escape="false" style="color:#b11"/>
 						</h:panelGroup>							
 						<h:panelGroup>	
@@ -254,38 +254,38 @@
 											<h:outputLink title="#{msgs.event_tool_tips_lockOrcancel}"  onclick="showEditTimeslot('#{timeSlotWrapper.positionInTSlist}'); return false;"
 												rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 									   			<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}">
-													<f:convertDateTime pattern="h:mm a" />
+													<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE" />
+													<f:convertDateTime pattern=", EEE" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}">
-													<f:convertDateTime pattern="h:mm a" />
+													<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE, " />
+													<f:convertDateTime pattern=", EEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime  dateStyle="short"/>
+													<f:convertDateTime  dateStyle="short" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 											</h:outputLink>
 											<h:panelGroup rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingExpired}">
 												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}">
-													<f:convertDateTime pattern="h:mm a" />
+													<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.startTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE" />
+													<f:convertDateTime pattern=", EEE" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{msgs.timeperiod_divider}" escape="false"/>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}">
-													<f:convertDateTime pattern="h:mm a" />
+													<f:convertDateTime pattern="h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime pattern=", EEE, " />
+													<f:convertDateTime pattern=", EEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 												<h:outputText value="#{timeSlotWrapper.timeSlot.endTime}" rendered="#{OrganizerSignupMBean.meetingWrapper.meeting.meetingCrossDays}">
-													<f:convertDateTime  dateStyle="short"/>
+													<f:convertDateTime  dateStyle="short" timeZone="#{UserTimeZone.userTimeZone}"/>
 												</h:outputText>
 											</h:panelGroup>
 										</h:panelGroup>
@@ -389,7 +389,7 @@
 							   							<h:outputText value="&nbsp;" escape="false" />
 						   							</h:panelGroup>
 						   							<h:panelGroup>
-							   							<h:commandLink action="#{OrganizerSignupMBean.viewAttendeeComment}">
+							   							<h:commandLink id="view_comment" action="#{OrganizerSignupMBean.viewAttendeeComment}">
 							   								<f:param id="timeslotId" name="timeslotId" value="#{timeSlotWrapper.timeSlot.id}"/>
 							   								<f:param id="attendeeUserId" name="attendeeUserId" value="#{attendeeWrapper.signupAttendee.attendeeUserId}"/>				   										   								
 							   								<h:outputText value="#{attendeeWrapper.displayName}" title="#{attendeeWrapper.commentForTooltips}" style="cursor:pointer;" rendered="#{attendeeWrapper.signupAttendee.attendeeUserId !=null}"/>
@@ -439,8 +439,8 @@
 										   						</h:panelGrid>
 										   					
 										   						<h:panelGrid columns="2"  style="width:50%;">
-										   							<h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.editTimeslotAttendee}"/>
-										   							<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels();return false;" immediate="true"/>
+										   							<h:commandButton id="edit_okBtn" value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.editTimeslotAttendee}"/>
+										   							<h:commandButton id="edit_cancelBtn" value="#{msgs.cancel_button}" action="" onclick="clearPanels();return false;" immediate="true"/>
 										   						</h:panelGrid>
 									   					
 									   					</h:panelGrid>
@@ -474,8 +474,8 @@
 						   							<h:inputText  id="addAttendeeEidOrEmailInput" size="20" value="#{OrganizerSignupMBean.userInputEidOrEmail}" rendered="#{OrganizerSignupMBean.eidInputMode}" />
 					   								
 					   								<h:panelGroup>
-						   						    	<h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendee}"/>
-						   								<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
+						   						    	<h:commandButton id="addPanel_okBtn" value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendee}"/>
+						   								<h:commandButton id="addPanel_cancelBtn" value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
 						   							</h:panelGroup>
 						   							
 						   							<%--  pad last column --%>
@@ -494,7 +494,7 @@
 								<f:facet name="header">
 									<h:outputText value="#{msgs.group_synchronise_heading}"/>
 								</f:facet>
-						   		<h:commandButton value="#{msgs.group_synchronise_button}" action="#{OrganizerSignupMBean.synchroniseGroupMembership}"/>
+						   		<h:commandButton id="syncGroup_btn" value="#{msgs.group_synchronise_button}" action="#{OrganizerSignupMBean.synchroniseGroupMembership}"/>
 					   		</h:column>
 					   		
 					   		<h:column rendered="#{!OrganizerSignupMBean.meetingWrapper.meeting.allowWaitList}">		   
@@ -580,8 +580,8 @@
 									   							<h:inputText id="addWaiterEidOrEmailInput" size="20" value="#{OrganizerSignupMBean.userInputEidOrEmail}" rendered="#{OrganizerSignupMBean.eidInputMode}" />
 								   								
 									   							<h:panelGroup>
-								   						    		<h:commandButton value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendeeToWList}"/>
-						   											<h:commandButton value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
+								   						    		<h:commandButton id="addWaiter_okBtn" value="#{msgs.ok_button}" action="#{OrganizerSignupMBean.addAttendeeToWList}"/>
+						   											<h:commandButton id="addWaiter_cancelBtn" value="#{msgs.cancel_button}" action="" onclick="clearPanels(); return false;"/>
 						   										</h:panelGroup>
 									   							
 									   							<%--  pad last column --%>

@@ -48,8 +48,7 @@ import org.sakaiproject.signup.tool.jsf.TimeslotWrapper;
 import org.sakaiproject.signup.tool.jsf.organizer.action.CreateMeetings;
 import org.sakaiproject.signup.tool.jsf.organizer.action.CreateSitesGroups;
 import org.sakaiproject.signup.tool.util.Utilities;
-
-import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
+//import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
 
 /**
  * <p>
@@ -135,6 +134,9 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 			"signup.email.notification.mandatory.for.newMeeting", "true")) ? true : false;
 	
 	private boolean mandatorySendEmail = NEW_MEETING_SEND_EMAIL;
+	
+ 	private List<SelectItem> categories = null;
+ 	private List<SelectItem> locations=null;
 
 	/**
 	 * this reset information which contains in this UIBean lived in a session
@@ -198,6 +200,8 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
 		this.selectedCategory = this.signupMeeting.getCategory();
 		this.customLocation="";
 		this.customCategory="";
+		this.categories = null;
+		this.locations = null;
 
 		populateDataForBeginDeadline(this.signupMeeting);
 		
@@ -626,10 +630,11 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
  	 * @return list of allLocations
  	 */
  	public List<SelectItem> getAllLocations(){
- 		
- 		List<SelectItem> locations= new ArrayList<SelectItem>();
- 		locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
- 		locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
+ 		if(locations ==null){
+ 			locations= new ArrayList<SelectItem>();
+ 			locations.addAll(Utilities.getSignupMeetingsBean().getAllLocations());
+ 			locations.add(0, new SelectItem(Utilities.rb.getString("select_location")));
+ 		}
  		return locations;
  	}
  	
@@ -639,10 +644,11 @@ public class CopyMeetingSignupMBean extends SignupUIBaseBean {
  	 * @return list of categories
  	 */
  	public List<SelectItem> getAllCategories(){
- 		
- 		List<SelectItem> categories= new ArrayList<SelectItem>();
- 		categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
- 		categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		if(categories == null){
+ 			categories= new ArrayList<SelectItem>();
+ 			categories.addAll(Utilities.getSignupMeetingsBean().getAllCategories());
+ 			categories.add(0, new SelectItem(Utilities.rb.getString("select_category")));
+ 		}
  		return categories;
  	}
 
