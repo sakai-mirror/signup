@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
@@ -99,18 +100,28 @@ public class AttendeeSignupEmail extends SignupEmailBase {
 		if (!meeting.isMeetingCrossDays()) {
 			Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getStartTime()).toStringLocalDate() };
+					getTime(timeslot.getStartTime()).toStringLocalDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.timeslot"), paramsTimeframe));
 		} else {
 			Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getStartTime()).toStringLocalShortDate(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getEndTime()).toStringLocalShortDate() };
+					getTime(timeslot.getEndTime()).toStringLocalShortDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.crossdays.timeslot"), paramsTimeframe));
 
 		}
+		//gets the comment
+		if(timeslot.getAttendee(currentUser.getId()) !=null && timeslot.getAttendee(currentUser.getId()).getComments() !=null
+				&& timeslot.getAttendee(currentUser.getId()).getComments().length()> 0
+				&& !"&nbsp;".equals(timeslot.getAttendee(currentUser.getId()).getComments())){
+			message.append(newline + newline + MessageFormat.format(rb.getString("body.commentBy"), new Object[] {
+				makeFirstCapLetter(currentUser.getDisplayName()), timeslot.getAttendee(currentUser.getId()).getComments() }));
+		}
+		
 		/* footer */
 		message.append(newline + getFooter(newline));
 		return message.toString();
@@ -118,13 +129,13 @@ public class AttendeeSignupEmail extends SignupEmailBase {
 	
 	@Override
 	public String getFromAddress() {
-		return currentUser.getEmail();
+		return StringUtils.defaultIfEmpty(currentUser.getEmail(), getServerFromAddress());
 	}
 
 	@Override
 	public String getSubject() {
 		return MessageFormat.format(rb.getString("subject.attendee.signup.field"), new Object[] {
-			getTime(meeting.getStartTime()).toStringLocalDate(), currentUser.getDisplayName(), getSiteTitle()});
+			getTime(meeting.getStartTime()).toStringLocalDate(), currentUser.getDisplayName(), getSiteTitle(), getAbbreviatedMeetingTitle()});
 	}
 	
 }

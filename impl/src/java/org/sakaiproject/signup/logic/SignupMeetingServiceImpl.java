@@ -373,7 +373,7 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 
 	}
 
-	/* get SignupSit object for the site Id */
+	/* get SignupSite object for the site Id */
 	private SignupSite currentSite(SignupMeeting meeting, String siteId) {
 		List<SignupSite> signupSites = meeting.getSignupSites();
 		for (SignupSite site : signupSites) {
@@ -1116,6 +1116,18 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	public void sendEmailToAttendee(SignupEventTrackingInfo signupEventTrackingInfo) throws Exception {
 		signupEmailFacade.sendEmailToAttendee(signupEventTrackingInfo);
 	}
+
+	@Override
+	public List<String> getAllLocations(String siteId) throws Exception {
+		return signupMeetingDao.getAllLocations(siteId);
+	}
+
+	@Override
+	public List<String> getAllCategories(String siteId) throws Exception {
+		return signupMeetingDao.getAllCategories(siteId);
+	}
+	
+	
 
 
 }

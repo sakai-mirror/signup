@@ -134,13 +134,15 @@ public class CancellationEmail extends SignupEmailBase implements SignupTimeslot
 				if (!meeting.isMeetingCrossDays()) {
 					Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 							getTime(timeslot.getEndTime()).toStringLocalTime(),
-							getTime(timeslot.getStartTime()).toStringLocalDate() };
+							getTime(timeslot.getStartTime()).toStringLocalDate(),
+							getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 					message.append(MessageFormat.format(rb.getString("body.meeting.timeslot.timeframe"), paramsTimeframe) + newline);
 				} else {
 					Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 							getTime(timeslot.getStartTime()).toStringLocalShortDate(),
 							getTime(timeslot.getEndTime()).toStringLocalTime(),
-							getTime(timeslot.getEndTime()).toStringLocalShortDate() };
+							getTime(timeslot.getEndTime()).toStringLocalShortDate(),
+							getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 					message.append(MessageFormat.format(rb.getString("body.meeting.crossdays.timeslot.timeframe"), paramsTimeframe) + newline);
 
 				}
@@ -174,8 +176,7 @@ public class CancellationEmail extends SignupEmailBase implements SignupTimeslot
 	@Override
 	public String getSubject() {
 		return MessageFormat.format(rb.getString("subject.Cancel.appointment.field"), new Object[] {
-			getTime(meeting.getStartTime()).toStringLocalDate(),
-			getSakaiFacade().getUserDisplayName(meeting.getCreatorUserId()) });
+			getTime(meeting.getStartTime()).toStringLocalDate(), getSakaiFacade().getUserDisplayName(meeting.getCreatorUserId()), getAbbreviatedMeetingTitle() });
 	}
 
 	@Override

@@ -148,20 +148,20 @@
 								<h:outputText value="#{msgs.event_start_time}"  escape="false"/>
 							</h:panelGroup>
 							<h:panelGroup styleClass="editText" rendered="#{!CopyMeetingSignupMBean.customTsType}">
-		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{CopyMeetingSignupMBean.signupMeeting.startTime}"
+		        						<t:inputDate id="startTime" type="both"  ampm="true" value="#{CopyMeetingSignupMBean.signupMeeting.startTime}" timeZone="#{UserTimeZone.userTimeZoneStr}"
 		        							style="color:black;" popupCalendar="true" onkeyup="setEndtimeMonthDateYear();getSignupDuration();sakai.updateSignupBeginsExact();return false;"
 		        							onchange="sakai.updateSignupBeginsExact();"/>
 										<h:message for="startTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
 							<h:panelGroup rendered="#{CopyMeetingSignupMBean.customTsType}">
 									<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime pattern="EEEEEEEE, " />
+				 						<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>
 									<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime dateStyle="long" />
+				 						<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>
 				 					<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.startTime}" styleClass="longtext">
-				 						<f:convertDateTime pattern=", h:mm a" />
+				 						<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 				 					</h:outputText>		
 							</h:panelGroup>
 							
@@ -170,19 +170,19 @@
 								<h:outputText value="#{msgs.event_end_time}" escape="false"/>
 							</h:panelGroup>
 		        			<h:panelGroup styleClass="editText" rendered="#{!CopyMeetingSignupMBean.customTsType}">
-		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{CopyMeetingSignupMBean.signupMeeting.endTime}" style="color:black;" popupCalendar="true" 
+		        						<t:inputDate id="endTime" type="both" ampm="true" value="#{CopyMeetingSignupMBean.signupMeeting.endTime}" timeZone="#{UserTimeZone.userTimeZoneStr}" style="color:black;" popupCalendar="true" 
 		        							onkeyup="getSignupDuration(); sakai.updateSignupEndsExact(); return false;" onchange="sakai.updateSignupEndsExact();"/>
 										<h:message for="endTime" errorClass="alertMessageInline"/>
 							</h:panelGroup>
 							<h:panelGroup rendered="#{CopyMeetingSignupMBean.customTsType}" >
 									<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime pattern="EEEEEEEE, " />
+										<f:convertDateTime pattern="EEEEEEEE, " timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime dateStyle="long" />
+										<f:convertDateTime dateStyle="long" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 									<h:outputText value="#{CopyMeetingSignupMBean.signupMeeting.endTime}" styleClass="longtext">
-										<f:convertDateTime pattern=", h:mm a" />
+										<f:convertDateTime pattern=", h:mm a" timeZone="#{UserTimeZone.userTimeZone}"/>
 									</h:outputText>
 							</h:panelGroup>
 							
@@ -478,11 +478,11 @@
 									<h:outputText value="#{msgs.event_yes_email_notification}" escape="false"/>
 								</h:panelGroup>
 								
-								<h:panelGroup id="emailAttendeeOnly" style="display:none" >
+								<h:panelGroup id="emailAttendeeOnly">
 									<h:selectOneRadio  value="#{CopyMeetingSignupMBean.sendEmailToSelectedPeopleOnly}" layout="lineDirection" styleClass="rs" style="margin-left:20px;">
-					                          <f:selectItem id="all_attendees" itemValue="all" itemLabel="#{msgs.label_email_all_people}"/>                                              
-					                          <f:selectItem id="only_organizers" itemValue="organizers_only" itemLabel="#{msgs.label_email_signed_up_ones_Organizers_only}"/>	
-					         		</h:selectOneRadio> 
+										<f:selectItem id="all_attendees" itemValue="all" itemLabel="#{msgs.label_email_all_people}" itemDisabled="true"/>
+										<f:selectItem id="only_organizers" itemValue="organizers_only" itemLabel="#{msgs.label_email_signed_up_ones_Organizers_only}" itemDisabled="true"/>
+									</h:selectOneRadio>
 								</h:panelGroup>
 							</h:panelGrid>
 							<h:panelGroup styleClass="longtext" rendered="#{!CopyMeetingSignupMBean.publishedSite}">

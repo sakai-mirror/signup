@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
@@ -104,7 +105,8 @@ public class OrganizerPreAssignEmail extends SignupEmailBase {
 		if (!meeting.isMeetingCrossDays()) {
 			Object[] paramsTimeframe = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getStartTime()).toStringLocalDate() };
+					getTime(timeslot.getStartTime()).toStringLocalDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID() };
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.organizer.preassigned.attendee.meeting.timeframe"),
 							paramsTimeframe));
@@ -112,7 +114,8 @@ public class OrganizerPreAssignEmail extends SignupEmailBase {
 			Object[] paramsTimeframe1 = new Object[] { getTime(timeslot.getStartTime()).toStringLocalTime(),
 					getTime(timeslot.getStartTime()).toStringLocalShortDate(),
 					getTime(timeslot.getEndTime()).toStringLocalTime(),
-					getTime(timeslot.getEndTime()).toStringLocalShortDate(), };
+					getTime(timeslot.getEndTime()).toStringLocalShortDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID() };
 			message.append(newline
 					+ MessageFormat.format(rb
 							.getString("body.organizer.preassigned.attendee.meeting.crossdays.timeframe"),
@@ -147,13 +150,13 @@ public class OrganizerPreAssignEmail extends SignupEmailBase {
 	
 	@Override
 	public String getFromAddress() {
-		return organizer.getEmail();
+		return StringUtils.defaultIfEmpty(organizer.getEmail(), getServerFromAddress());
 	}
 	
 	@Override
 	public String getSubject() {
 		return MessageFormat.format(rb.getString("subject.organizerPreAssign.appointment.field"), new Object[] {
-			organizer.getDisplayName(), getTime(meeting.getStartTime()).toStringLocalDate() });
+			organizer.getDisplayName(), getTime(meeting.getStartTime()).toStringLocalDate(), getAbbreviatedMeetingTitle() });
 	}
 
 }

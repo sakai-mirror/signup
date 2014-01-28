@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.sakaiproject.signup.logic.SakaiFacade;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
@@ -92,14 +93,16 @@ public class NewMeetingEmail extends SignupEmailBase {
 		if (!meeting.isMeetingCrossDays()) {
 			Object[] paramsTimeframe = new Object[] { getTime(meeting.getStartTime()).toStringLocalDate(),
 					getTime(meeting.getStartTime()).toStringLocalTime(),
-					getTime(meeting.getEndTime()).toStringLocalTime() };
+					getTime(meeting.getEndTime()).toStringLocalTime(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.organizer.meeting.timeframe"), paramsTimeframe));
 		} else {
 			Object[] paramsTimeframe1 = new Object[] { getTime(meeting.getStartTime()).toStringLocalTime(),
 					getTime(meeting.getStartTime()).toStringLocalShortDate(),
 					getTime(meeting.getEndTime()).toStringLocalTime(),
-					getTime(meeting.getEndTime()).toStringLocalShortDate() };
+					getTime(meeting.getEndTime()).toStringLocalShortDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat
 							.format(rb.getString("body.organizer.meeting.crossdays.timeframe"), paramsTimeframe1));
@@ -192,12 +195,12 @@ public class NewMeetingEmail extends SignupEmailBase {
 
 	@Override
 	public String getFromAddress() {
-		return creator.getEmail();
+		return StringUtils.defaultIfEmpty(creator.getEmail(), getServerFromAddress());
 	}
 	
 	@Override
 	public String getSubject() {
 		return MessageFormat.format(rb.getString("subject.newMeeting.field"), new Object[] {
-			creator.getDisplayName(), getTime(meeting.getStartTime()).toStringLocalDate() });
+			creator.getDisplayName(), getTime(meeting.getStartTime()).toStringLocalDate(), getAbbreviatedMeetingTitle() });
 	}
 }

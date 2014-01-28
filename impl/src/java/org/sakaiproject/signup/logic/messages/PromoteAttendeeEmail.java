@@ -100,7 +100,8 @@ public class PromoteAttendeeEmail extends SignupEmailBase {
 			Object[] paramsTimeframe = new Object[] {
 					getTime(item.getAddToTimeslot().getStartTime()).toStringLocalTime(),
 					getTime(item.getAddToTimeslot().getEndTime()).toStringLocalTime(),
-					getTime(item.getAddToTimeslot().getStartTime()).toStringLocalDate() };
+					getTime(item.getAddToTimeslot().getStartTime()).toStringLocalDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.timeslot"), paramsTimeframe));
 		} else {
@@ -108,7 +109,8 @@ public class PromoteAttendeeEmail extends SignupEmailBase {
 					getTime(item.getAddToTimeslot().getStartTime()).toStringLocalTime(),
 					getTime(item.getAddToTimeslot().getStartTime()).toStringLocalShortDate(),
 					getTime(item.getAddToTimeslot().getEndTime()).toStringLocalTime(),
-					getTime(item.getAddToTimeslot().getEndTime()).toStringLocalShortDate() };
+					getTime(item.getAddToTimeslot().getEndTime()).toStringLocalShortDate(),
+					getSakaiFacade().getTimeService().getLocalTimeZone().getID()};
 			message.append(newline
 					+ MessageFormat.format(rb.getString("body.attendee.meeting.crossdays.timeslot"), paramsTimeframe));
 
@@ -153,7 +155,7 @@ public class PromoteAttendeeEmail extends SignupEmailBase {
 	@Override
 	public String getSubject() {
 		return MessageFormat.format(rb.getString("subject.promote.appointment.field"), new Object[] { getTime(
-				meeting.getStartTime()).toStringLocalDate() });
+				meeting.getStartTime()).toStringLocalDate(), getAbbreviatedMeetingTitle() });
 	}
 
 }
