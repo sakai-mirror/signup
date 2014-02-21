@@ -256,7 +256,7 @@ public class SignupMeetingsBean implements SignupBeanConstants {
 		
 		long curr_time=(new Date()).getTime();
 		//avoid multiple calls for one page loading : not refresh within one second
-		if(allCategories == null || curr_time - lastUpdatedCatTime > 1000){			
+		if(allCategories == null || curr_time - lastUpdatedCatTime > 2000){			
 			List<SelectItem> categories = new ArrayList<SelectItem>();		
 			List<String> allCats = null;
 			try {
