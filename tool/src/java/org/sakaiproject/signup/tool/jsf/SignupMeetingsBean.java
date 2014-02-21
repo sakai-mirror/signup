@@ -282,6 +282,7 @@ public class SignupMeetingsBean implements SignupBeanConstants {
 			}
 			
 			lastUpdatedCatTime = curr_time;
+			categories.add(0, new SelectItem("", Utilities.rb.getString("filter_categories_top")));
 			allCategories = categories;
 		}
 		
@@ -1115,7 +1116,6 @@ public class SignupMeetingsBean implements SignupBeanConstants {
  	 */
  	public List<SelectItem> getAllCategoriesForFilter(){
  		List<SelectItem> categories = getAllCategories();
- 		categories.add(0, new SelectItem("", Utilities.rb.getString("filter_categories_top")));
  		return categories;
  	}
  	
