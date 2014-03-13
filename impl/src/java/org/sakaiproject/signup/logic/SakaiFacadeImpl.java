@@ -1,25 +1,22 @@
-/**********************************************************************************
- * $URL: https://source.sakaiproject.org/contrib/signup/branches/2-6-x/impl/src/java/org/sakaiproject/signup/logic/SakaiFacadeImpl.java $
- * $Id: SakaiFacadeImpl.java 59241 2009-03-24 15:52:18Z guangzheng.liu@yale.edu $
-***********************************************************************************
- *
- * Copyright (c) 2007, 2008, 2009 Yale University
- * 
- * Licensed under the Educational Community License, Version 1.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *      http://www.opensource.org/licenses/ecl1.php
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
- * limitations under the License.
- *   
- * See the LICENSE.txt distributed with this file.
- *
- **********************************************************************************/
+/*
+* Licensed to The Apereo Foundation under one or more contributor license
+* agreements. See the NOTICE file distributed with this work for
+* additional information regarding copyright ownership.
+*
+* The Apereo Foundation licenses this file to you under the Educational 
+* Community License, Version 2.0 (the "License"); you may not use this file 
+* except in compliance with the License. You may obtain a copy of the 
+* License at:
+*
+* http://opensource.org/licenses/ecl2.txt
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 package org.sakaiproject.signup.logic;
 
 import java.util.ArrayList;
@@ -43,10 +40,13 @@ import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.calendar.api.Calendar;
+import org.sakaiproject.calendar.api.CalendarEdit;
 import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentHostingService;
+import org.sakaiproject.exception.IdInvalidException;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.IdUsedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.signup.model.SignupGroup;
 import org.sakaiproject.signup.model.SignupMeeting;
@@ -913,17 +913,29 @@ public class SakaiFacadeImpl implements SakaiFacade {
 	/**
 	 * {@inheritDoc}
 	 */
-	public Calendar getCalendar(String siteId) throws IdUnusedException, PermissionException {
+	public Calendar getCalendar(String siteId) throws PermissionException {
 		String calendarId = calendarService.calendarReference(siteId, SiteService.MAIN_CONTAINER);
-		Calendar calendar = calendarService.getCalendar(calendarId);
-		return calendar;
+		return getCalendarById(calendarId);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public Calendar getCalendarById(String calendarId) throws IdUnusedException, PermissionException {
-		Calendar calendar = calendarService.getCalendar(calendarId);
+	public Calendar getCalendarById(String calendarId) throws PermissionException {
+		Calendar calendar = null;
+		try {
+			calendar = calendarService.getCalendar(calendarId);
+		} catch (IdUnusedException e) {
+			try {
+				CalendarEdit calendarEdit = calendarService.addCalendar(calendarId);
+				calendarService.commitCalendar(calendarEdit);
+				calendar = getCalendarById(calendarId);
+			} catch (IdInvalidException highlyUnlikely) {
+				log.error(highlyUnlikely);
+			} catch (IdUsedException extremelyUnlikely) {
+				log.error(extremelyUnlikely);
+			}
+		}
 		return calendar;
 	}
 
